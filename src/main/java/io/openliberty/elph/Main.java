@@ -5,6 +5,7 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.HelpCommand;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
+import picocli.CommandLine.Parameters;
 import picocli.CommandLine.PropertiesDefaultProvider;
 import picocli.CommandLine.Spec;
 
@@ -16,12 +17,14 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
-import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import static java.util.Arrays.asList;
+import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.joining;
 import static javax.swing.JFileChooser.APPROVE_OPTION;
 
@@ -42,10 +45,14 @@ public class Main {
     Path eclipseHome;
     @Option(names = {"-w", "--eclipse-workspace"}, hidden = true)
     Path eclipseWorkspace;
+    @Option(names = {"-c", "--eclipse-command"}, split="\n", splitSynopsisLabel = "\\n", description = "Command to open a directory for import into eclipse")
+    List<String> eclipseCommand;
     @Option(names = "--finish-command", hidden = true)
     List<String> finishCommand;
     @Option(names = {"-h", "-?", "--help"}, usageHelp = true, hidden = true, description = "display this help message")
     boolean usageHelpRequested;
+    @Option(names = {"-n", "--dry-run"}, description = "Do not run commands - just print them.")
+    boolean dryRun;
 
     public static void main(String... args) throws Exception {
         System.exit(new CommandLine(new Main()).setAbbreviatedSubcommandsAllowed(true).execute(args));
@@ -59,10 +66,27 @@ public class Main {
             Path newEclipseHome,
             @Option(names = {"-w", "--eclipse-workspace"}, paramLabel = "DIR", description = "Specify the directory for the Eclipse workspace")
             Path newEclipseWorkspace) {
-        if (newRepo == null) newRepo = chooseDirectory(this.repo, "Locate your local Open Liberty git repository");
-        if (newRepo != null) save("elph.ol-repo", newRepo);
-
+        updatePath(this.repo, newRepo, "elph.ol-repo", "Locate your local Open Liberty git repository");
+        updatePath(this.eclipseHome, newEclipseHome, "elph.eclipse-home", "Locate your Eclipse Application");
+        updatePath(this.eclipseWorkspace, newEclipseWorkspace, "elph.eclipse-workspace", "Locate your local Open Liberty git repository");
     }
+
+    @Command(description = "Automatically add project to Eclipse")
+    public void importProject(
+            @Parameters(paramLabel = "Project", arity = "1", description = "The path to the project you want to import")
+            String projectName) {
+        if(eclipseWorkspace == repo) {
+            System.out.println("You must first specify the location of your Open Liberty dev repo using the 'elph configure'");
+            return;
+        }
+        invokeEclipse(projectName);
+    }
+
+    private void updatePath(Path oldPath, Path newPath, String pathTypeName, String uiMsg) {
+        if (newPath == null) newPath = chooseDirectory(oldPath, uiMsg);
+        if (newPath != null) save(pathTypeName, newPath);
+    }
+
 
     public static final Path HOME_DIR = Paths.get(System.getProperty("user.home"));
     static final File PROPS_FILE = HOME_DIR.resolve(".elph.properties").toFile();
@@ -78,7 +102,6 @@ public class Main {
             throw new RuntimeException(e);
         }
     }
-
 
     static Path chooseDirectory(Path oldPath, String title) {
         var chooser = new JFileChooser();
@@ -96,5 +119,49 @@ public class Main {
             return chooser.getSelectedFile().toPath();
         }
         return null;
+    }
+
+    static Error error(String message, String... details) {
+        System.err.println("ERROR: " + message);
+        for (String detail: details) System.err.println(detail);
+        System.exit(1);
+        throw new Error();
+    }
+
+    void verbose(String msg, Object...inserts) { System.out.println(String.format(msg, inserts)); }
+
+    private void run(List<String> cmd, String...extraArgs) {
+        Stream.of(extraArgs).forEach(cmd::add);
+        try {
+            if (dryRun) cmd.stream().collect(joining(" ", "'" , "'"));
+            new ProcessBuilder(cmd).inheritIO().start().waitFor();
+        } catch (IOException e) {
+            error("Error invoking command " + cmd.stream().collect(joining("' '", "'", "'")) + e.getMessage());
+        } catch (InterruptedException e) {
+            error("Interrupted waiting for command " + cmd.stream().collect(joining("' '", "'", "'")) + e.getMessage());
+        }
+    }
+
+    private static boolean isMacOS() { return "Mac OS X".equals(System.getProperty("os.name")); }
+
+    private List<String> requireEclipseCommand() { return Optional.ofNullable(getEclipseCommand()).orElseThrow(() -> error("Must specify eclipse command in order to automate eclipse actions.")); }
+
+    private List<String> getEclipseCommand() { return null != eclipseCommand ? eclipseCommand : defaultEclipseCommand(); }
+
+    private List<String> defaultEclipseCommand() {
+        if (!isMacOS())  return null;
+        String eclipseAppLocation = eclipseHome == null ? "Eclipse" : eclipseHome.toString();
+        return isMacOS() ? new ArrayList<>(asList(String.format("open -a %s", eclipseHome).split(" "))) : null;
+    }
+
+
+    void invokeEclipse(Path path) { invokeEclipse(path.toString()); }
+    void invokeEclipse(String path) {
+        String fullPath = repo+"/dev/"+path;
+        verbose("Invoking eclipse to import %s", fullPath);
+        // invoke eclipse
+        run(requireEclipseCommand(), fullPath);
+        // optionally click finish
+//        Optional.ofNullable(getFinishCommand()).filter(not(List::isEmpty)).ifPresent(this::run);
     }
 }
