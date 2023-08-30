@@ -36,7 +36,7 @@ import static javax.swing.JFileChooser.APPROVE_OPTION;
 public class Main {
     @Spec
     CommandSpec spec;
-    @Option(names = {"-l", "--repo"}, hidden = true)
+    @Option(names = {"-o", "--ol-repo"}, hidden = true)
     Path repo;
     @Option(names = {"-e", "--eclipse-home"}, hidden = true)
     Path eclipseHome;
@@ -44,6 +44,8 @@ public class Main {
     Path eclipseWorkspace;
     @Option(names = "--finish-command", hidden = true)
     List<String> finishCommand;
+    @Option(names = {"-h", "-?", "--help"}, usageHelp = true, hidden = true, description = "display this help message")
+    boolean usageHelpRequested;
 
     public static void main(String... args) throws Exception {
         System.exit(new CommandLine(new Main()).setAbbreviatedSubcommandsAllowed(true).execute(args));
@@ -58,7 +60,7 @@ public class Main {
             @Option(names = {"-w", "--eclipse-workspace"}, paramLabel = "DIR", description = "Specify the directory for the Eclipse workspace")
             Path newEclipseWorkspace) {
         if (newRepo == null) newRepo = chooseDirectory(this.repo, "Locate your local Open Liberty git repository");
-        if (newRepo != null) save("elph.repo", newRepo);
+        if (newRepo != null) save("elph.ol-repo", newRepo);
 
     }
 
