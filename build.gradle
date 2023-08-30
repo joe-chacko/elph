@@ -1,0 +1,31 @@
+plugins {
+    id 'application'
+}
+
+application {
+    mainClass = 'io.openliberty.elph.Main'
+}
+
+repositories {
+    mavenCentral()
+}
+
+tasks.named('wrapper') {
+    jarFile = rootProject.file('.gradle-wrapper/gradle-wrapper.jar')
+}
+
+java {
+    sourceCompatibility = '17'
+    targetCompatibility = '17'
+}
+
+group 'io.openliberty'
+version '1.0-SNAPSHOT'
+
+
+dependencies {
+    implementation 'org.jgrapht:jgrapht-core:1.5.1'
+    implementation 'info.picocli:picocli:4.7.4'
+    implementation 'org.osgi:osgi.core:8.0.0'
+    implementation 'org.apache.commons:commons-collections4:4.4'
+}
