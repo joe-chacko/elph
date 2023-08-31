@@ -71,11 +71,11 @@ public class Main {
         updatePath(this.eclipseWorkspace, newEclipseWorkspace, "elph.eclipse-workspace", "Locate your local Open Liberty git repository");
     }
 
-    @Command(description = "Automatically add project to Eclipse")
+    @Command(description = "Automatically add project to Eclipse. \nPlease ensure both your terminal and eclipse applications aren't full screen.")
     public void importProject(
-            @Parameters(paramLabel = "Project", arity = "1", description = "The path to the project you want to import")
+            @Parameters(paramLabel = "project", arity = "1", description = "The name the project you want to import")
             String projectName) {
-        if(eclipseWorkspace == repo) {
+        if(null == repo) {
             System.out.println("You must first specify the location of your Open Liberty dev repo using the 'elph configure'");
             return;
         }
@@ -154,6 +154,9 @@ public class Main {
         return isMacOS() ? new ArrayList<>(asList(String.format("open -a %s", eclipseHome).split(" "))) : null;
     }
 
+    private List<String> getFinishCommand() { return  null != finishCommand ? finishCommand : defaultFinishCommand(); }
+    private List<String> defaultFinishCommand() { return isMacOS() ? asList("osascript", "-e", "tell app \"System Events\" to tell process \"Eclipse\" to click button \"Finish\" of window 1") : null; }
+
 
     void invokeEclipse(Path path) { invokeEclipse(path.toString()); }
     void invokeEclipse(String path) {
@@ -162,6 +165,6 @@ public class Main {
         // invoke eclipse
         run(requireEclipseCommand(), fullPath);
         // optionally click finish
-//        Optional.ofNullable(getFinishCommand()).filter(not(List::isEmpty)).ifPresent(this::run);
+        Optional.ofNullable(getFinishCommand()).filter(not(List::isEmpty)).ifPresent(this::run);
     }
 }
