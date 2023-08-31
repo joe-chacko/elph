@@ -19,8 +19,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.Scanner;
 import java.util.stream.Stream;
 
 import static java.util.Arrays.asList;
@@ -83,7 +85,7 @@ public class Main {
     }
 
     private void updatePath(Path oldPath, Path newPath, String pathTypeName, String uiMsg) {
-        if (newPath == null) newPath = chooseDirectory(oldPath, uiMsg);
+        if (newPath == null) newPath = Input.chooseDirectory(oldPath, uiMsg);
         if (newPath != null) save(pathTypeName, newPath);
     }
 
@@ -103,22 +105,24 @@ public class Main {
         }
     }
 
-    static Path chooseDirectory(Path oldPath, String title) {
-        var chooser = new JFileChooser();
-        chooser.setDialogTitle(title);
-        chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-        if (oldPath != null && Files.isDirectory(oldPath.getParent())) {
-            // start from the previous selection if possible
-            chooser.setCurrentDirectory(oldPath.getParent().toFile());
-            if (Files.isDirectory(oldPath)) chooser.setSelectedFile(oldPath.toFile());
-        } else {
-            chooser.setCurrentDirectory(HOME_DIR.toFile());
+    enum Input {
+        ;
+        final static Scanner SCANNER = new Scanner(System.in);
+
+        static Path chooseDirectory(Path oldPath, String title) {
+            System.out.printf("=== %s ===%n", title);
+            String oldVal = oldPath == null ? "<not specified>" : oldPath.toString();
+            System.out.println("Old value: " + oldVal);
+            try {
+                System.in.readNBytes(System.in.available());
+            } catch (IOException ignored) {}
+            System.out.println("Enter a new value (blank to leave unchanged): ");
+            try {
+                return Optional.of(SCANNER.nextLine()).filter(not(String::isBlank)).map(Paths::get).orElse(null);
+            } catch (NoSuchElementException e) {
+                return null;
+            }
         }
-        chooser.setAcceptAllFileFilterUsed(false);
-        if (APPROVE_OPTION == chooser.showOpenDialog(null)) {
-            return chooser.getSelectedFile().toPath();
-        }
-        return null;
     }
 
     static Error error(String message, String... details) {
