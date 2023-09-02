@@ -1,6 +1,7 @@
 package io.openliberty.elph;
 
 import picocli.CommandLine.Command;
+import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.ParentCommand;
@@ -12,22 +13,18 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.NoSuchElementException;
-import java.util.Optional;
 import java.util.Properties;
-import java.util.Scanner;
 
-import static io.openliberty.elph.Main.TOOL_NAME;
-import static java.util.function.Predicate.not;
+import static io.openliberty.elph.ElphCommand.TOOL_NAME;
 import static java.util.stream.Collectors.joining;
 
 @Command(name = "configure", description = "Change the directories used by " + TOOL_NAME + ".")
-public class Configure implements Runnable {
+public class ConfigureCommand implements Runnable {
     static final Path HOME_DIR = Paths.get(System.getProperty("user.home"));
     static final File PROPS_FILE = HOME_DIR.resolve(".elph.properties").toFile();
 
     @ParentCommand
-    Main main;
+    ElphCommand elph;
     @Spec
     CommandSpec spec;
 
@@ -37,49 +34,42 @@ public class Configure implements Runnable {
     Path newEclipseHome;
     @Option(names = {"-w", "--eclipse-workspace"}, paramLabel = "DIR", description = "the Eclipse workspace directory")
     Path newEclipseWorkspace;
-
+    @Option(names = {"-i", "--interactive"}, description = "ask for replacement values")
+    boolean interactive;
+    @Mixin
+    IO io;
 
     @Override
     public void run() {
-        updatePath(main.olRepo, newRepo, "elph.ol-repo", "Locate your local Open Liberty git repository");
-        updatePath(main.eclipseHome, newEclipseHome, "elph.eclipse-home", "Locate your Eclipse Application");
-        updatePath(main.eclipseWorkspace, newEclipseWorkspace, "elph.eclipse-workspace", "Locate your local Open Liberty git repository");
+        updatePath(elph.getOpenLibertyRepo(), newRepo, "elph.ol-repo", "Open Liberty git repository");
+        updatePath(elph.getEclipseHome(), newEclipseHome, "elph.eclipse-home", "Eclipse Application");
+        updatePath(elph.getEclipseWorkspace(), newEclipseWorkspace, "elph.eclipse-workspace", "Eclipse Workspace");
     }
 
+    private boolean reportingOnly() { return null == newRepo && null == newEclipseHome && null == newEclipseWorkspace && !interactive; }
+
     private void updatePath(Path oldPath, Path newPath, String pathTypeName, String uiMsg) {
-        if (newPath == null) newPath = Input.chooseDirectory(oldPath, uiMsg);
-        if (newPath != null) save(pathTypeName, newPath);
+        io.debugf("updatePath(%s, %s, \"%s\", \"%s\")%n", oldPath, newPath, pathTypeName, uiMsg);
+        if (null == newPath && interactive) newPath = io.chooseDirectory(uiMsg, oldPath);
+        else io.reportDirectory(uiMsg, oldPath, newPath);
+        if (null != newPath) save(pathTypeName, newPath);
     }
 
     private void save(String name, Path dir) {
         Properties prefs = new Properties();
         try {
             if (PROPS_FILE.exists()) prefs.load(new FileReader(PROPS_FILE));
-            prefs.put(name, dir.toAbsolutePath().toString());
+            dir = dir.toAbsolutePath();
+            // normalize may simplify the path, but isn't guaranteed to be possible on all systems
+            try {
+                Path norm = dir.normalize();
+                dir = norm;
+            } catch (Throwable ignored) {}
+            prefs.put(name, dir.toString());
             prefs.store(new FileWriter(PROPS_FILE), "Written programmatically using: " + spec.name() + " " + spec.commandLine().getParseResult().originalArgs().stream().collect(joining(" ")));
         } catch (IOException e) {
             // TODO report error
             throw new RuntimeException(e);
-        }
-    }
-
-    enum Input {
-        ;
-        final static Scanner SCANNER = new Scanner(System.in);
-
-        static Path chooseDirectory(Path oldPath, String title) {
-            System.out.printf("=== %s ===%n", title);
-            String oldVal = oldPath == null ? "<not specified>" : oldPath.toString();
-            System.out.println("Old value: " + oldVal);
-            try {
-                System.in.readNBytes(System.in.available());
-            } catch (IOException ignored) {}
-            System.out.println("Enter a new value (blank to leave unchanged): ");
-            try {
-                return Optional.of(SCANNER.nextLine()).filter(not(String::isBlank)).map(Paths::get).orElse(null);
-            } catch (NoSuchElementException e) {
-                return null;
-            }
         }
     }
 }
