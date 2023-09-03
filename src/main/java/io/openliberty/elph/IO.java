@@ -2,6 +2,7 @@ package io.openliberty.elph;
 
 import picocli.CommandLine.Option;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.NoSuchElementException;
@@ -86,6 +87,11 @@ class IO {
     void logf(String msg, Object...inserts) { if (isEnabled(LOG)) System.out.println(String.format(msg, inserts)); }
     void debug(Supplier<String> msg) { if (isEnabled(DEBUG)) System.out.println(msg.get()); }
     void debugf(String msg, Object...inserts) { if (isEnabled(DEBUG)) System.out.println(String.format(msg, inserts)); }
-    void report(String msg) { if (!quiet) System.out.println(msg); }
+    void report(Object msg) { if (!quiet) System.out.println(msg); }
     void reportf(String msg, Object... inserts) { if (!quiet) System.out.println(String.format(msg, inserts)); }
+
+    Path verifyDir(String desc, Path dir) {
+        if (Files.isDirectory(dir)) return dir;
+        throw error("Could not locate " + desc + ": " + dir);
+    }
 }

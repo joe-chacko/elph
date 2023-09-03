@@ -10,7 +10,7 @@
  *     IBM Corporation - initial API and implementation
  * =============================================================================
  */
-package io.openliberty.elph;
+package io.openliberty.elph.bnd;
 
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
@@ -53,7 +53,7 @@ public class BndCatalog {
     private final Map<String, BndProject> nameIndex = new TreeMap<>();
     private final MultiValuedMap<Path, BndProject> pathIndex = new HashSetValuedHashMap<>();
 
-    BndCatalog(Path bndWorkspace) throws IOException {
+    public BndCatalog(Path bndWorkspace) throws IOException {
         // add the vertices
         try (var files = Files.list(bndWorkspace)) {files
                 .filter(Files::isDirectory) // for every subdirectory
@@ -93,7 +93,7 @@ public class BndCatalog {
                 .distinct();
     }
 
-    Stream<Path> findProjects(String pattern) {
+    public Stream<Path> findProjects(String pattern) {
         var set = pathIndex.keySet().stream()
                 // Use Java's globbing support to match paths
                 .filter(FileSystems.getDefault().getPathMatcher("glob:" + pattern)::matches)
@@ -131,7 +131,7 @@ public class BndCatalog {
                 .map(p -> p.root);
     }
 
-    Stream<Path> getRequiredProjectPaths(Collection<String> projectNames) {
+    public Stream<Path> getRequiredProjectPaths(Collection<String> projectNames) {
         return getRequiredProjectPaths(projectNames, false);
     }
 
@@ -142,7 +142,7 @@ public class BndCatalog {
         return stream(topo).map(p -> p.root);
     }
 
-    Stream<Path> getDependentProjectPaths(Collection<String> projectNames) {
+    public Stream<Path> getDependentProjectPaths(Collection<String> projectNames) {
         return projectNames.stream()
                 .map(this::find)
                 .map(digraph::incomingEdgesOf)

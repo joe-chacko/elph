@@ -1,4 +1,4 @@
-package io.openliberty.elph;
+package io.openliberty.elph.bnd;
 
 import java.io.IOError;
 import java.io.IOException;

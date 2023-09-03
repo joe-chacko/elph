@@ -27,7 +27,5 @@ public class ImportCommand implements Runnable {
     String pattern;
 
     @Override
-    public void run() {
-        elph.getCatalog().findProjects(pattern).forEach(elph::importProject);
-    }
+    public void run() { elph.getCatalog().findProjects(pattern).forEach(elph::importProject); }
 }

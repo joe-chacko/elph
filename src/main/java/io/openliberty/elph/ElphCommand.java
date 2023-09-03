@@ -1,5 +1,6 @@
 package io.openliberty.elph;
 
+import io.openliberty.elph.bnd.BndCatalog;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.HelpCommand;
 import picocli.CommandLine.Mixin;
@@ -10,11 +11,14 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.Arrays.asList;
+import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toSet;
 
 @Command(
         name = ElphCommand.TOOL_NAME,
@@ -24,7 +28,8 @@ import static java.util.stream.Collectors.joining;
         subcommands = {
                 HelpCommand.class,
                 ConfigureCommand.class,
-                ImportCommand.class
+                ImportCommand.class,
+                ListCommand.class
         }, // other subcommands are annotated methods
         defaultValueProvider = PropertiesDefaultProvider.class
 )
@@ -78,9 +83,9 @@ public class ElphCommand {
     private List<String> defaultFinishCommand() { return Util.isMacOS() ? asList("osascript", "-e", "tell app \"System Events\" to tell process \"Eclipse\" to click button \"Finish\" of window 1") : null; }
 
     void runExternal(List<String> cmd, String...extraArgs) {
-        Stream.of(extraArgs).forEach(cmd::add);
+        cmd.addAll(asList(extraArgs));
         try {
-            if (dryRun) cmd.stream().collect(joining("' '", "'" , "'"));
+            if (dryRun) io.report(cmd.stream().collect(joining("' '", "'" , "'")));
             new ProcessBuilder(cmd).inheritIO().start().waitFor();
         } catch (IOException e) {
             io.error("Error invoking command " + cmd.stream().collect(joining("' '", "'", "'")) + e.getMessage());
@@ -112,4 +117,22 @@ public class ElphCommand {
         io.logf("Invoking command to press finish: ", cmd.stream().collect(joining("\" \"", "\"", "\"")));
         runExternal(getFinishCommand());
     }
+
+    Set<String> getProjectsInEclipse() {
+        Path dotProjectsDir = getEclipseDotProjectsDir();
+        try {
+            return Files.list(dotProjectsDir)
+                    .filter(Files::isDirectory)
+                    .map(Path::getFileName)
+                    .map(Path::toString)
+                    .filter(not(s -> s.startsWith(".")))
+                    .collect(toSet());
+        } catch (IOException e) {
+            throw io.error("Could not enumerate Eclipse projects despite finding metadata location: " + dotProjectsDir,
+                    "Exception was " + e);
+        }
+    }
+
+    private Path getEclipseDotProjectsDir() { return io.verifyDir(".projects dir", getEclipseWorkspace().resolve(".metadata/.plugins/org.eclipse.core.resources/.projects")); }
+
 }
