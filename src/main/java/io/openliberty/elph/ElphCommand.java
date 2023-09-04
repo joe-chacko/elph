@@ -126,7 +126,7 @@ public class ElphCommand {
     }
 
     void importProject(Path path) {
-        io.logf("Invoking eclipse to import %s", path);
+        io.infof("Importing %s", path);
         // invoke eclipse
         runExternal(getEclipseCmd(path));
         // optionally click finish
