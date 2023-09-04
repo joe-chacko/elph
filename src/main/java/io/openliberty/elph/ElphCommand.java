@@ -49,7 +49,7 @@ public class ElphCommand {
     @Mixin
     private IO io;
     private BndCatalog catalog;
-    private boolean validationRequired;
+    private boolean validationRequired = true;
 
     @Command(name = "start-eclipse", description = "Start Eclipse with the specified workspace.")
     void startEclipse() {runExternal(getEclipseCmd());}
