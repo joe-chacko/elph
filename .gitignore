@@ -1,3 +1,5 @@
 .gradle
 bin
 build
+.idea/uiDesigner.xml
+
