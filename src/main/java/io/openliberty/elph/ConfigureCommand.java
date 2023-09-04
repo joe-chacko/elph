@@ -17,6 +17,7 @@ import java.util.Properties;
 import java.util.function.Consumer;
 
 import static io.openliberty.elph.ElphCommand.TOOL_NAME;
+import static io.openliberty.elph.OS.MAC;
 import static java.util.stream.Collectors.joining;
 
 @Command(name = "configure", description = "Change the directories used by " + TOOL_NAME + ".")
@@ -44,8 +45,8 @@ public class ConfigureCommand implements Runnable {
     public void run() {
         elph.allowNullPaths();
         updatePath(elph.getOpenLibertyRepo(), newRepo, "elph.ol-repo", "Open Liberty git repository", elph::setOpenLibertyRepo);
-        updatePath(elph.getEclipseHome(), newEclipseHome, "elph.eclipse-home", "Eclipse Application", elph::setEclipseHome);
-        updatePath(elph.getEclipseWorkspace(), newEclipseWorkspace, "elph.eclipse-workspace", "Eclipse Workspace", elph::setEclipseWorkspace);
+        updatePath(elph.getEclipseHome(), newEclipseHome, "elph.eclipse-home", OS.is(MAC) ? "Eclipse app": "Eclipse home directory", elph::setEclipseHome);
+        updatePath(elph.getEclipseWorkspace(), newEclipseWorkspace, "elph.eclipse-workspace", "Eclipse workspace", elph::setEclipseWorkspace);
     }
 
     private boolean reportingOnly() { return null == newRepo && null == newEclipseHome && null == newEclipseWorkspace && !interactive; }

@@ -43,7 +43,7 @@ class IO {
 
     Path chooseDirectory(String title, Path oldPath) {
         reportf("=== %s ===", title);
-        String oldVal = oldPath == null ? "<not specified>" : oldPath.toString();
+        String oldVal = stringify(oldPath);
         reportf("   was: %s", oldVal);
         return inputf(Paths::get, "   new %s (blank to leave unchanged): ", title);
     }
@@ -57,11 +57,11 @@ class IO {
     void reportDirectory(String title, Path oldPath, Path newPath) {
         if (null != newPath) {
             reportf("=== %s ===", title);
-            reportf("   was: %s", oldPath);
-            reportf("    is: %s", newPath);
+            reportf("   was: %s", stringify(oldPath));
+            reportf("    is: %s", stringify(newPath));
         } else {
             reportf("=== %s ===", title);
-            reportf("        %s", oldPath);
+            reportf("        %s", stringify(oldPath));
         }
     }
 
@@ -89,5 +89,9 @@ class IO {
     Path verifyDir(String desc, Path dir) {
         if (Files.isDirectory(dir)) return dir;
         throw error("Could not locate " + desc + ": " + dir);
+    }
+
+    private static String stringify(Path setting) {
+        return setting == null ? "<not specified>" : setting.toString();
     }
 }
