@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Properties;
+import java.util.function.Consumer;
 
 import static io.openliberty.elph.ElphCommand.TOOL_NAME;
 import static java.util.stream.Collectors.joining;
@@ -41,18 +42,22 @@ public class ConfigureCommand implements Runnable {
 
     @Override
     public void run() {
-        updatePath(elph.getOpenLibertyRepo(), newRepo, "elph.ol-repo", "Open Liberty git repository");
-        updatePath(elph.getEclipseHome(), newEclipseHome, "elph.eclipse-home", "Eclipse Application");
-        updatePath(elph.getEclipseWorkspace(), newEclipseWorkspace, "elph.eclipse-workspace", "Eclipse Workspace");
+        elph.allowNullPaths();
+        updatePath(elph.getOpenLibertyRepo(), newRepo, "elph.ol-repo", "Open Liberty git repository", elph::setOpenLibertyRepo);
+        updatePath(elph.getEclipseHome(), newEclipseHome, "elph.eclipse-home", "Eclipse Application", elph::setEclipseHome);
+        updatePath(elph.getEclipseWorkspace(), newEclipseWorkspace, "elph.eclipse-workspace", "Eclipse Workspace", elph::setEclipseWorkspace);
     }
 
     private boolean reportingOnly() { return null == newRepo && null == newEclipseHome && null == newEclipseWorkspace && !interactive; }
 
-    private void updatePath(Path oldPath, Path newPath, String pathTypeName, String uiMsg) {
+    private void updatePath(Path oldPath, Path newPath, String pathTypeName, String uiMsg, Consumer<Path> validator) {
         io.debugf("updatePath(%s, %s, \"%s\", \"%s\")%n", oldPath, newPath, pathTypeName, uiMsg);
         if (null == newPath && interactive) newPath = io.chooseDirectory(uiMsg, oldPath);
         else io.reportDirectory(uiMsg, oldPath, newPath);
-        if (null != newPath) save(pathTypeName, newPath);
+        if (null != newPath) {
+            save(pathTypeName, newPath);
+            validator.accept(newPath);
+        }
     }
 
     private void save(String name, Path dir) {

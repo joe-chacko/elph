@@ -15,6 +15,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static io.openliberty.elph.OS.MAC;
 import static java.util.Arrays.asList;
 import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.joining;
@@ -35,13 +36,9 @@ import static java.util.stream.Collectors.toSet;
 )
 public class ElphCommand {
     static final String TOOL_NAME = "elph";
-    @Option(names = {"-o", "--ol-repo"}, hidden = true)
-    private
-    Path olRepo;
-    @Option(names = {"-e", "--eclipse-home"}, hidden = true)
-    private
-    Path eclipseHome;
-    @Option(names = {"-w", "--eclipse-workspace"}, hidden = true)
+    public static final String DOT_PROJECTS = ".metadata/.plugins/org.eclipse.core.resources/.projects";
+    private Path olRepo;
+    private Path eclipseHome;
     private Path eclipseWorkspace;
     @Option(names = "--finish-command", hidden = true)
     private List<String> finishCommand;
@@ -51,15 +48,48 @@ public class ElphCommand {
     private boolean dryRun;
     @Mixin
     private IO io;
-
     private BndCatalog catalog;
+    private boolean validationRequired;
 
-    Path getOpenLibertyRepo() { return olRepo; }
-    Path getEclipseHome() { return eclipseHome; }
-    Path getEclipseWorkspace() { return eclipseWorkspace; }
+    @Command(name = "start-eclipse", description = "Start Eclipse with the specified workspace.")
+    void startEclipse() {runExternal(getEclipseCmd());}
+
+    void allowNullPaths() { validationRequired = false; }
+    Path getOpenLibertyRepo() {
+        if (validationRequired && null == olRepo) throw io.error("No Open Liberty repository configured");
+        return olRepo;
+    }
+    Path getEclipseHome() {
+        if (validationRequired  && null == eclipseHome) throw io.error("No Eclipse home configured");
+        return eclipseHome;
+    }
+    Path getEclipseWorkspace() {
+        if (validationRequired  && null == eclipseWorkspace) throw io.error("No Eclipse workspace configured");
+        return eclipseWorkspace;
+    }
+
+    @Option(names = {"-o", "--ol-repo"}, paramLabel = "PATH", hidden = true)
+    void setOpenLibertyRepo(Path path) {
+        this.olRepo = path;
+        if (!Files.isDirectory(olRepo)) io.warn("Open Liberty repository is not a valid directory: " + olRepo);
+        else if (!Files.isDirectory(olRepo.resolve(".git"))) io.warn("Open Liberty repository does not appear to be a git repository: " + olRepo);
+        else if (!Files.isDirectory(olRepo.resolve("dev"))) io.warn("Open Liberty repository does not contain an expected 'dev' subdirectory: " + olRepo);
+    }
+    @Option(names = {"-e", "--eclipse-home"}, paramLabel = "PATH", hidden = true)
+    void setEclipseHome(Path path) {
+        this.eclipseHome = path;
+        if (!Files.isDirectory(eclipseHome)) io.warn("Eclipse Home is not a valid " + (OS.is(MAC) ? "app" : "directory") + ": " + olRepo);
+        else if (OS.is(MAC) && !eclipseHome.toString().endsWith(".app")) io.warn("Eclipse Home is a directory but not a .app directory");
+        else if (!Files.isExecutable(eclipseHome.resolve(OS.current().pathToExecutable))) throw io.error("Eclipse Home does not contain an executable in the expected place: " + eclipseHome.resolve(OS.current().pathToExecutable));
+    }
+    @Option(names = {"-w", "--eclipse-workspace"}, paramLabel = "PATH", hidden = true)
+    void setEclipseWorkspace(Path path) {
+        this.eclipseWorkspace = path;
+        if (!Files.isDirectory(eclipseWorkspace)) io.warn("Eclipse workspace is not a valid directory: " + eclipseWorkspace, "Hint: this directory will be created automatically by Eclipse if started appropriately.");
+        else if (!Files.isDirectory(eclipseWorkspace.resolve(DOT_PROJECTS))) io.warn("Eclipse workspace does not containt expected subdirectory: " + eclipseWorkspace.resolve(DOT_PROJECTS));
+    }
 
     private Path getBndWorkspace() {
-        if (null == getOpenLibertyRepo()) throw io.error("No OpenLiberty repository configured");
         return getOpenLibertyRepo().resolve("dev");
     }
 
@@ -80,7 +110,8 @@ public class ElphCommand {
     }
 
     private List<String> getFinishCommand() { return null != finishCommand ? finishCommand : defaultFinishCommand(); }
-    private List<String> defaultFinishCommand() { return Util.isMacOS() ? asList("osascript", "-e", "tell app \"System Events\" to tell process \"Eclipse\" to click button \"Finish\" of window 1") : null; }
+    private List<String> defaultFinishCommand() {
+        return OS.is(MAC) ? asList("osascript", "-e", "tell app \"System Events\" to tell process \"Eclipse\" to click button \"Finish\" of window 1") : null; }
 
     void runExternal(List<String> cmd, String...extraArgs) {
         cmd.addAll(asList(extraArgs));
@@ -96,16 +127,25 @@ public class ElphCommand {
 
     void importProject(Path path) {
         io.logf("Invoking eclipse to import %s", path);
-        var args = Util.isMacOS() ?
-                Stream.of("open", "-a", getEclipseHome(), path, "--args", "-data", getEclipseWorkspace()) :
-                Stream.of(getEclipseHome().resolve("eclipse"), "-data", getEclipseWorkspace(), path);
-        var eclipseCommand = args
-                .map(Object::toString)
-                .collect(Collectors.toList());
         // invoke eclipse
-        runExternal(eclipseCommand);
+        runExternal(getEclipseCmd(path));
         // optionally click finish
         pressFinish();
+    }
+
+    private List<String> getEclipseCmd(Path...args) {
+        if (OS.is(MAC)) {
+            return Stream.of(
+                    Stream.of("open", "-a", getEclipseHome()),
+                    Stream.of(args),
+                    Stream.of("--args", "-data", getEclipseWorkspace())
+            ).flatMap(s -> s).map(Object::toString).collect(Collectors.toList());
+        } else {
+            return Stream.concat(
+                    Stream.of(getEclipseHome().resolve("eclipse"), "-data", getEclipseWorkspace()),
+                    Stream.of(args)
+            ).map(Object::toString).collect(Collectors.toList());
+        }
     }
 
     void pressFinish() {
@@ -133,6 +173,5 @@ public class ElphCommand {
         }
     }
 
-    private Path getEclipseDotProjectsDir() { return io.verifyDir(".projects dir", getEclipseWorkspace().resolve(".metadata/.plugins/org.eclipse.core.resources/.projects")); }
-
+    private Path getEclipseDotProjectsDir() { return io.verifyDir(".projects dir", getEclipseWorkspace().resolve(DOT_PROJECTS)); }
 }
