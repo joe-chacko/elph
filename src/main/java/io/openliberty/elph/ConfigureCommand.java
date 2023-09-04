@@ -49,8 +49,6 @@ public class ConfigureCommand implements Runnable {
         updatePath(elph.getEclipseWorkspace(), newEclipseWorkspace, "elph.eclipse-workspace", "Eclipse workspace", elph::setEclipseWorkspace);
     }
 
-    private boolean reportingOnly() { return null == newRepo && null == newEclipseHome && null == newEclipseWorkspace && !interactive; }
-
     private void updatePath(Path oldPath, Path newPath, String pathTypeName, String uiMsg, Consumer<Path> validator) {
         io.debugf("updatePath(%s, %s, \"%s\", \"%s\")%n", oldPath, newPath, pathTypeName, uiMsg);
         if (null == newPath && interactive) newPath = io.chooseDirectory(uiMsg, oldPath);

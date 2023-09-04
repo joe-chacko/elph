@@ -51,7 +51,7 @@ public class ElphCommand {
     private BndCatalog catalog;
     private boolean validationRequired = true;
 
-    @Command(name = "start-eclipse", description = "Start Eclipse with the specified workspace.")
+    @Command(name = "start-eclipse", description = "Start Eclipse with the specified workspace. This is a good test of your " + TOOL_NAME + " configuration, but it does not replace other ways of launching Eclipse.")
     void startEclipse() {runExternal(getEclipseCmd());}
 
     void allowNullPaths() { validationRequired = false; }
