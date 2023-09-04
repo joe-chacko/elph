@@ -7,7 +7,7 @@ SDK_MAN_INIT="$HOME"/.sdkman/bin/sdkman-init.sh
 cd "$BASE_DIR"
 
 # If sdkman is installed, initialize the environment
-[ ! -f  "$SDK_MAN_INIT" ] || { . "$SDK_MAN_INIT" && sdk env -q ; }
+[ ! -f  "$SDK_MAN_INIT" ] || { . "$SDK_MAN_INIT" && sdk env > /dev/null; }
 
 # If the source is newer than the generated script, re-build using gradle
 [ -z "$(find src -type f -newer "$SHELL_SCRIPT" 2>&1)" ] || ./gradlew clean install 1>&2
