@@ -40,6 +40,7 @@ public class ImportCommand implements Runnable {
     @Mixin
     IO io;
     private final List<String> projects = new ArrayList<>();
+    private boolean noHistory;
 
     static class Args {
         @Option(names = {"-j", "--just"}, required = true, description = "Import just the matching projects. Do NOT import any dependencies.")
@@ -59,12 +60,21 @@ public class ImportCommand implements Runnable {
         if (args.noDeps) {
             patterns.stream()
                     .flatMap(elph.getCatalog()::findProjects)
-                    .forEach(elph::importProject);
+                    .forEach(this::importProject);
         } else {
             saveImportToHistory();
             findProjects(this.patterns, args.includeUsers);
             importInBatches();
         }
+    }
+
+    private void importProject(Path path) {
+        io.infof("Importing %s", path);
+        // invoke eclipse
+        elph.runExternal(elph.getEclipseCmd(path));
+        // optionally click finish
+        if (noHistory) return;
+        elph.pressFinish();
     }
 
     void importInBatches() {
@@ -77,7 +87,7 @@ public class ImportCommand implements Runnable {
         var leaves = getNextBatch(projects);
         while (leaves.size() > 0) {
             io.reportf("Importing batch of projects: %d of %d remaining", leaves.size(), getDepCount(projects));
-            leaves.forEach(elph::importProject);
+            leaves.forEach(this::importProject);
             leaves = getNextBatch(projects);
             io.pause();
         }
@@ -125,18 +135,19 @@ public class ImportCommand implements Runnable {
         return elph.getCatalog().getLeafProjects(projects, elph.getProjectsInEclipse()).collect(toList());
     }
 
-    private Path getSettingsFile() {
+    private Path getHistoryFile() {
         String desc = SETTINGS_LIST_FILE_DESC;
         Path path = elph.getWorkspaceSettingsDir().resolve(SETTINGS_LIST_FILE);
+        if (!Files.exists(path)) noHistory = true;
         return io.verifyOrCreateFile(desc, path);
     }
 
     private List<String> getRawImportList() {
-        Path settingsFile = getSettingsFile();
+        Path historyFile = getHistoryFile();
         try {
-            return Files.readAllLines(settingsFile);
+            return Files.readAllLines(historyFile);
         } catch (IOException e) {
-            throw io.error("Could not open the " + SETTINGS_LIST_FILE_DESC + " for reading: " + settingsFile);
+            throw io.error("Could not open the " + SETTINGS_LIST_FILE_DESC + " for reading: " + historyFile);
         }
     }
 
@@ -148,7 +159,7 @@ public class ImportCommand implements Runnable {
 
     private void writeSettingsList(Stream<String> settingsList) {
         // write this out to file
-        Path settingsFile = getSettingsFile();
+        Path settingsFile = getHistoryFile();
         try (FileWriter fw = new FileWriter(settingsFile.toFile()); PrintWriter pw = new PrintWriter(fw)) {
             settingsList.distinct().forEach(pw::println);
         } catch (IOException e) {

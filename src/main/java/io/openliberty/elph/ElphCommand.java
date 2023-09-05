@@ -127,15 +127,7 @@ public class ElphCommand {
         }
     }
 
-    void importProject(Path path) {
-        io.infof("Importing %s", path);
-        // invoke eclipse
-        runExternal(getEclipseCmd(path));
-        // optionally click finish
-        pressFinish();
-    }
-
-    private List<String> getEclipseCmd(Path...args) {
+    List<String> getEclipseCmd(Path...args) {
         if (OS.is(MAC)) {
             return Stream.of(
                     Stream.of("open", "-a", getEclipseHome()),
