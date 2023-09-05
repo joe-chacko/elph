@@ -86,10 +86,13 @@ public class ImportCommand implements Runnable {
         io.report("Projects to be imported: " + depCount);
         var leaves = getNextBatch(projects);
         while (leaves.size() > 0) {
+            depCount = getDepCount(projects);
             io.reportf("Importing batch of projects: %d of %d remaining", leaves.size(), getDepCount(projects));
             leaves.forEach(this::importProject);
-            leaves = getNextBatch(projects);
+            // if we might be done, stop here
+            if (leaves.size() == depCount) break;
             io.pause();
+            leaves = getNextBatch(projects);
         }
     }
 
