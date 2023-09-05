@@ -12,6 +12,7 @@
  */
 package io.openliberty.elph.bnd;
 
+import io.openliberty.elph.io.IO;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.jgrapht.Graph;
@@ -29,6 +30,7 @@ import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -42,6 +44,7 @@ import java.util.stream.StreamSupport;
 
 import static java.util.Comparator.comparing;
 import static java.util.Spliterator.ORDERED;
+import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toUnmodifiableSet;
 
 public class BndCatalog {
@@ -49,11 +52,13 @@ public class BndCatalog {
         return new SimpleDirectedGraph<>(DefaultEdge.class);
     }
 
+    private final IO io;
     private final SimpleDirectedGraph<BndProject, DefaultEdge> digraph = newGraph();
     private final Map<String, BndProject> nameIndex = new TreeMap<>();
     private final MultiValuedMap<Path, BndProject> pathIndex = new HashSetValuedHashMap<>();
 
-    public BndCatalog(Path bndWorkspace) throws IOException {
+    public BndCatalog(Path bndWorkspace, IO io) throws IOException {
+        this.io = io;
         // add the vertices
         try (var files = Files.list(bndWorkspace)) {files
                 .filter(Files::isDirectory) // for every subdirectory
@@ -118,17 +123,23 @@ public class BndCatalog {
         return nameIndex.get(name);
     }
 
-    Stream<Path> getLeafProjects(Collection<String> roots, Set<String> ignorables) {
+    public Stream<Path> getLeafProjects(Collection<String> roots, Set<String> ignorables) {
         var deps = getProjectAndDependencySubgraph(roots, false);
         // remove the projects that are in the ignorables set
-        deps.vertexSet().stream()
+        io.debugf("getLeafProjects() found %d required projects", deps.vertexSet().size());
+        var toRemove = deps.vertexSet().stream()
                 .filter(p -> ignorables.contains(p.name))
-                .collect(Collectors.toList())
-                .forEach(deps::removeVertex);
+                .collect(toList());
+        io.debugf("getLeafProjects() ignoring %d imported projects", deps.vertexSet().size());
+        deps.removeAllVertices(toRemove);
         // now find the leaves
-        return deps.vertexSet().stream()
+        var leaves = deps.vertexSet().stream()
                 .filter(p -> deps.outgoingEdgesOf(p).size() == 0)
-                .map(p -> p.root);
+                .map(p -> p.root)
+                .sorted()
+                .collect(toList());
+        io.debugf("getLeafProjects() found %d leaf projects", leaves.size());
+        return leaves.stream();
     }
 
     public Stream<Path> getRequiredProjectPaths(Collection<String> projectNames) {

@@ -1,6 +1,7 @@
 package io.openliberty.elph;
 
 import io.openliberty.elph.bnd.BndCatalog;
+import io.openliberty.elph.io.IO;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.HelpCommand;
 import picocli.CommandLine.Mixin;
@@ -98,7 +99,7 @@ public class ElphCommand {
             Path bndWorkspace = getBndWorkspace();
             if (Files.isDirectory(bndWorkspace)) {
                 try {
-                    this.catalog = new BndCatalog(bndWorkspace);
+                    this.catalog = new BndCatalog(bndWorkspace, io);
                 } catch (IOException e) {
                     throw io.error("Could not inspect bnd workspace: " + bndWorkspace);
                 }
@@ -171,6 +172,10 @@ public class ElphCommand {
             throw io.error("Could not enumerate Eclipse projects despite finding metadata location: " + dotProjectsDir,
                     "Exception was " + e);
         }
+    }
+
+    Path getWorkspaceSettingsDir() {
+        return io.verifyOrCreateDir(TOOL_NAME + " workspace settings directory", getEclipseWorkspace().resolve("." + TOOL_NAME));
     }
 
     private Path getEclipseDotProjectsDir() { return io.verifyDir(".projects dir", getEclipseWorkspace().resolve(DOT_PROJECTS)); }

@@ -1,5 +1,6 @@
 package io.openliberty.elph;
 
+import io.openliberty.elph.io.IO;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Model.CommandSpec;
