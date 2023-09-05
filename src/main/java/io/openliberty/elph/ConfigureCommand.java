@@ -46,7 +46,7 @@ public class ConfigureCommand implements Runnable {
     public void run() {
         elph.allowNullPaths();
         updatePath(elph.getOpenLibertyRepo(), newRepo, "elph.ol-repo", "Open Liberty git repository", elph::setOpenLibertyRepo);
-        updatePath(elph.getEclipseHome(), newEclipseHome, "elph.eclipse-home", OS.is(MAC) ? "Eclipse app": "Eclipse home directory", elph::setEclipseHome);
+        updatePath(elph.getEclipseHome(), newEclipseHome, "elph.eclipse-home", OS.is(MAC) ? "Eclipse home (Eclipse.app)": "Eclipse home directory", elph::setEclipseHome);
         updatePath(elph.getEclipseWorkspace(), newEclipseWorkspace, "elph.eclipse-workspace", "Eclipse workspace", elph::setEclipseWorkspace);
     }
 
