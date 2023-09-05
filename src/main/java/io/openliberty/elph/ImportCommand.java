@@ -25,13 +25,13 @@ import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
-@Command(name = ImportCommand.SUBCOMMAND_NAME, description = "Automatically add project to Eclipse. " +
-        "Please ensure both your terminal and eclipse applications are not full screen.")
+@Command(name = ImportCommand.SUBCOMMAND_NAME, description = "Add project and its dependencies to Eclipse. " +
+        "It is recommended to have your terminal and your Eclipse window both visible at the same time. ")
 public class ImportCommand implements Runnable {
     static final Path HOME_DIR = Paths.get(System.getProperty("user.home"));
     static final String SUBCOMMAND_NAME = "import";
-    static final String SETTINGS_LIST_FILE = SUBCOMMAND_NAME + ".list";
-    static final String SETTINGS_LIST_FILE_DESC = TOOL_NAME + " " + SUBCOMMAND_NAME + " list file";
+    static final String SETTINGS_LIST_FILE = SUBCOMMAND_NAME + ".hist";
+    static final String SETTINGS_LIST_FILE_DESC = TOOL_NAME + " " + SUBCOMMAND_NAME + " history file";
 
     @ParentCommand
     ElphCommand elph;
@@ -44,7 +44,7 @@ public class ImportCommand implements Runnable {
     static class Args {
         @Option(names = {"-j", "--just"}, required = true, description = "Import just the matching projects. Do NOT import any dependencies.")
         boolean noDeps;
-        @Option(names = {"-u", "--users"}, required = true, description = "Import the matching projects and all the projects that use them.")
+        @Option(names = {"-u", "--users"}, required = true, description = "Include users of the specified projects. Helps spot incompatible code changes.")
         boolean includeUsers;
     }
 
@@ -134,7 +134,7 @@ public class ImportCommand implements Runnable {
         // write this out to file
         Path settingsFile = getSettingsFile();
         try (FileWriter fw = new FileWriter(settingsFile.toFile()); PrintWriter pw = new PrintWriter(fw)) {
-            settingsList.forEach(pw::println);
+            settingsList.distinct().forEach(pw::println);
         } catch (IOException e) {
             throw io.error("Failed to open settings list file for writing: " + settingsFile);
         }
