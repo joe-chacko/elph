@@ -66,16 +66,16 @@ public class IO {
         }
     }
 
-    public Error error(String message, String... details) {
+    public Error error(String message, Object... details) {
         System.err.println("ERROR: " + message);
-        for (String detail: details) System.err.println(detail);
+        for (Object detail: details) System.err.println(detail);
         System.exit(1);
         throw new Error();
     }
 
-    public void warn(String message, String... details) {
+    public void warn(String message, Object... details) {
         System.err.println("WARNING: " + message);
-        for (String detail : details) System.err.println(detail);
+        for (Object detail : details) System.err.println(detail);
     }
 
     public void info(Supplier<String> msg) { if (isEnabled(INFO)) System.out.println(msg.get()); }

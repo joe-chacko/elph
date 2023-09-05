@@ -30,6 +30,7 @@ import static java.util.stream.Collectors.toSet;
         subcommands = {
                 HelpCommand.class,
                 ConfigureCommand.class,
+                ForgetCommand.class,
                 ImportCommand.class,
                 ListCommand.class,
                 ReimportCommand.class

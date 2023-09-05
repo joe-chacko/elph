@@ -10,6 +10,7 @@ import picocli.CommandLine.Parameters;
 import picocli.CommandLine.ParentCommand;
 import picocli.CommandLine.Spec;
 
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -96,14 +97,50 @@ public class ImportCommand implements Runnable {
         }
     }
 
+    void deleteHistory() {
+        File file = getHistoryFile().toFile();
+        if (!file.exists()) {
+            io.report("No history to delete.");
+            return;
+        }
+        try {
+            io.logf("Deleting %s", file);
+            if (file.delete())
+                io.report("History deleted.");
+            else
+                io.warn("Deletion failed for file: " + file);
+        } catch (Exception e) {
+            throw io.error("Could not delete file: " + file, e);
+        }
+    }
+
+    void deleteHistory(List<String> patterns) {
+        var history = getHistoryList();
+        history.removeAll(patterns);
+        patterns.stream().map(s -> "--users " + s).forEach(history::remove);
+        writeSettingsList(history.stream());
+    }
+
+    void reportHistory() {
+        var history = getHistoryList();
+        if (history.isEmpty()) {
+            io.report("No import history recorded.");
+            return;
+        }
+        io.reportf("");
+        io.report("=== Import History ===");
+        history.stream().map(s -> "  " + s).forEach(io::report);
+        io.reportf("");
+    }
+
     void initFromHistory() {
-        var imports = getRawImportList();
+        var imports = getHistoryList();
         var importsWithUsers = imports.stream()
-                .filter(s -> s.endsWith(" +users"))
-                .map(s -> s.substring(0, s.length() - " +users".length()))
+                .filter(s -> s.startsWith("--users "))
+                .map(s -> s.substring("--users ".length()))
                 .collect(toList());
         var importsWithoutUsers = imports.stream()
-                .filter(not(s -> s.endsWith(" +users")))
+                .filter(not(s -> s.startsWith("--users ")))
                 .collect(toList());
         // must findProjects with users first
         findProjects(importsWithUsers, true);
@@ -145,7 +182,7 @@ public class ImportCommand implements Runnable {
         return io.verifyOrCreateFile(desc, path);
     }
 
-    private List<String> getRawImportList() {
+    private List<String> getHistoryList() {
         Path historyFile = getHistoryFile();
         try {
             return Files.readAllLines(historyFile);
@@ -156,8 +193,8 @@ public class ImportCommand implements Runnable {
 
     private void saveImportToHistory() {
         writeSettingsList(Stream.concat(
-                getRawImportList().stream(),
-                patterns.stream().map(s -> args.includeUsers ? s + " +users" : s)));
+                getHistoryList().stream(),
+                patterns.stream().map(s -> args.includeUsers ? "--users " + s : s)));
     }
 
     private void writeSettingsList(Stream<String> settingsList) {
