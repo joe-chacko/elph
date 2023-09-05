@@ -82,9 +82,9 @@ public class ConfigureCommand implements Runnable {
         io.reportf("%n");
         updatePath(elph.getOpenLibertyRepo(), newRepo, "elph.ol-repo", "Open Liberty git repository", elph::setOpenLibertyRepo);
         io.reportf("%n");
-        updatePath(elph.getEclipseHome(), newEclipseHome, "elph.eclipse-home", OS.is(MAC) ? "Eclipse home (Eclipse.app)": "Eclipse home directory", elph::setEclipseHome);
+        updatePath(elph.getEclipseHome(), newEclipseHome, "elph.eclipse", OS.is(MAC) ? "Eclipse home (Eclipse.app)": "Eclipse home directory", elph::setEclipseHome);
         io.reportf("%n");
-        updatePath(elph.getEclipseWorkspace(), newEclipseWorkspace, "elph.eclipse-workspace", "Eclipse workspace", elph::setEclipseWorkspace);
+        updatePath(elph.getEclipseWorkspace(), newEclipseWorkspace, "elph.workspace", "Eclipse workspace", elph::setEclipseWorkspace);
         io.reportf("%n");
     }
 
