@@ -61,24 +61,40 @@ public class ImportCommand implements Runnable {
                     .flatMap(elph.getCatalog()::findProjects)
                     .forEach(elph::importProject);
         } else {
-            saveImportToList();
-            List<String> patterns = this.patterns;
-            boolean includeUsers = args.includeUsers;
-            findProjects(patterns, includeUsers);
-            int depCount = getDepCount(projects);
-            if (depCount == 0) {
-                io.report("Nothing left to import.");
-                return;
-            }
-            io.report("Projects to be imported: " + depCount);
-            var leaves = getNextBatch(projects);
-            while (leaves.size() > 0) {
-                io.reportf("Importing batch of projects: %d of %d remaining", leaves.size(), getDepCount(projects));
-                leaves.forEach(elph::importProject);
-                leaves = getNextBatch(projects);
-                io.pause();
-            }
+            saveImportToHistory();
+            findProjects(this.patterns, args.includeUsers);
+            importInBatches();
         }
+    }
+
+    void importInBatches() {
+        int depCount = getDepCount(projects);
+        if (depCount == 0) {
+            io.report("Nothing left to import.");
+            return;
+        }
+        io.report("Projects to be imported: " + depCount);
+        var leaves = getNextBatch(projects);
+        while (leaves.size() > 0) {
+            io.reportf("Importing batch of projects: %d of %d remaining", leaves.size(), getDepCount(projects));
+            leaves.forEach(elph::importProject);
+            leaves = getNextBatch(projects);
+            io.pause();
+        }
+    }
+
+    void initFromHistory() {
+        var imports = getRawImportList();
+        var importsWithUsers = imports.stream()
+                .filter(s -> s.endsWith(" +users"))
+                .map(s -> s.substring(0, s.length() - " +users".length()))
+                .collect(toList());
+        var importsWithoutUsers = imports.stream()
+                .filter(not(s -> s.endsWith(" +users")))
+                .collect(toList());
+        // must findProjects with users first
+        findProjects(importsWithUsers, true);
+        findProjects(importsWithoutUsers, false);
     }
 
     private void findProjects(List<String> patterns, boolean includeUsers) {
@@ -124,7 +140,7 @@ public class ImportCommand implements Runnable {
         }
     }
 
-    private void saveImportToList() {
+    private void saveImportToHistory() {
         writeSettingsList(Stream.concat(
                 getRawImportList().stream(),
                 patterns.stream().map(s -> args.includeUsers ? s + " +users" : s)));

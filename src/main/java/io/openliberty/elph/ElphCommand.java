@@ -31,7 +31,8 @@ import static java.util.stream.Collectors.toSet;
                 HelpCommand.class,
                 ConfigureCommand.class,
                 ImportCommand.class,
-                ListCommand.class
+                ListCommand.class,
+                ReimportCommand.class
         }, // other subcommands are annotated methods
         defaultValueProvider = PropertiesDefaultProvider.class
 )
