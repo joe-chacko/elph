@@ -76,14 +76,14 @@ public class ElphCommand {
         else if (!Files.isDirectory(olRepo.resolve(".git"))) io.warn("Open Liberty repository does not appear to be a git repository: " + olRepo);
         else if (!Files.isDirectory(olRepo.resolve("dev"))) io.warn("Open Liberty repository does not contain an expected 'dev' subdirectory: " + olRepo);
     }
-    @Option(names = {"-e", "--eclipse-home"}, paramLabel = "PATH", hidden = true)
+    @Option(names = {"-e", "--eclipse"}, paramLabel = "PATH", hidden = true)
     void setEclipseHome(Path path) {
         this.eclipseHome = path;
         if (!Files.isDirectory(eclipseHome)) io.warn("Eclipse Home is not a valid " + (OS.is(MAC) ? "app" : "directory") + ": " + olRepo);
         else if (OS.is(MAC) && !eclipseHome.toString().endsWith(".app")) io.warn("Eclipse Home is a directory but not a .app directory");
         else if (!Files.isExecutable(eclipseHome.resolve(OS.current().pathToExecutable))) throw io.error("Eclipse Home does not contain an executable in the expected place: " + eclipseHome.resolve(OS.current().pathToExecutable));
     }
-    @Option(names = {"-w", "--eclipse-workspace"}, paramLabel = "PATH", hidden = true)
+    @Option(names = {"-w", "--workspace"}, paramLabel = "PATH", hidden = true)
     void setEclipseWorkspace(Path path) {
         this.eclipseWorkspace = path;
         if (!Files.isDirectory(eclipseWorkspace)) io.warn("Eclipse workspace is not a valid directory: " + eclipseWorkspace, "Hint: this directory will be created automatically by Eclipse if started appropriately.");

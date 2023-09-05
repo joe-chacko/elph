@@ -1,6 +1,8 @@
 package io.openliberty.elph;
 
 import io.openliberty.elph.io.IO;
+import picocli.CommandLine;
+import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Model.CommandSpec;
@@ -31,23 +33,59 @@ public class ConfigureCommand implements Runnable {
     @Spec
     CommandSpec spec;
 
-    @Option(names = {"-o", "--ol-repo"}, paramLabel = "DIR", description = "the local open-liberty git repository")
+    static class NonInteractiveOptions {
+        @Option(names = {"--ol-repo"}, paramLabel = "DIR", description = "the local open-liberty git repository")
+        Path newRepo;
+        @Option(names = {"--eclipse"}, paramLabel = "DIR", description = "the app / directory containing Eclipse")
+        Path newEclipseHome;
+        @Option(names = {"--workspace"}, paramLabel = "DIR", description = "the Eclipse workspace directory")
+        Path newEclipseWorkspace;
+    }
+
+    static class InteractiveOptions {
+        @Option(names = {"-i", "--interactive"}, description = "interactively configure all the settings")
+        boolean interactive;
+    }
+
+    static class Args {
+        @ArgGroup
+        NonInteractiveOptions nonInteractiveOptions;
+        @ArgGroup
+        InteractiveOptions interactiveOptions;
+    }
+
+    @ArgGroup(exclusive = true)
+    Args args;
+
     Path newRepo;
-    @Option(names = {"-e", "--eclipse-home"}, paramLabel = "DIR", description = "the app / directory containing Eclipse")
     Path newEclipseHome;
-    @Option(names = {"-w", "--eclipse-workspace"}, paramLabel = "DIR", description = "the Eclipse workspace directory")
     Path newEclipseWorkspace;
-    @Option(names = {"-i", "--interactive"}, description = "ask for replacement values")
     boolean interactive;
+
+
     @Mixin
     IO io;
 
     @Override
     public void run() {
+        if (null != args) {
+            if (null != args.interactiveOptions) {
+                this.interactive = args.interactiveOptions.interactive;
+            }
+            if (null != args.nonInteractiveOptions) {
+                this.newRepo = args.nonInteractiveOptions.newRepo;
+                this.newEclipseHome = args.nonInteractiveOptions.newEclipseHome;
+                this.newEclipseWorkspace = args.nonInteractiveOptions.newEclipseWorkspace;
+            }
+        }
         elph.allowNullPaths();
+        io.reportf("%n");
         updatePath(elph.getOpenLibertyRepo(), newRepo, "elph.ol-repo", "Open Liberty git repository", elph::setOpenLibertyRepo);
+        io.reportf("%n");
         updatePath(elph.getEclipseHome(), newEclipseHome, "elph.eclipse-home", OS.is(MAC) ? "Eclipse home (Eclipse.app)": "Eclipse home directory", elph::setEclipseHome);
+        io.reportf("%n");
         updatePath(elph.getEclipseWorkspace(), newEclipseWorkspace, "elph.eclipse-workspace", "Eclipse workspace", elph::setEclipseWorkspace);
+        io.reportf("%n");
     }
 
     private void updatePath(Path oldPath, Path newPath, String pathTypeName, String uiMsg, Consumer<Path> validator) {
