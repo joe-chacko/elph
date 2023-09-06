@@ -1,5 +1,6 @@
-package io.openliberty.elph;
+package io.openliberty.elph.cmd;
 
+import io.openliberty.elph.util.OS;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -13,11 +14,11 @@ import java.nio.file.Paths;
 import java.util.Properties;
 import java.util.function.Consumer;
 
-import static io.openliberty.elph.ElphCommand.TOOL_NAME;
-import static io.openliberty.elph.OS.MAC;
+import static io.openliberty.elph.cmd.ElphCommand.TOOL_NAME;
+import static io.openliberty.elph.util.OS.MAC;
 
 @Command(name = "setup", description = "Review/configure the directories used by " + TOOL_NAME + ".")
-public class SetupCommand extends AbstractCommand implements Runnable {
+class SetupCommand extends AbstractCommand implements Runnable {
     static final Path HOME_DIR = Paths.get(System.getProperty("user.home"));
     static final File PROPS_FILE = HOME_DIR.resolve(".elph.properties").toFile();
 

@@ -11,18 +11,18 @@ import static java.util.stream.Collectors.toCollection;
 
 /**
  * Outside this package, projects are referred to using their (absolute) path objects.
- * This is a collection of convenience functions for translation.
+ * This is a collection of convenience functions for translation from Path to String.
  */
-public enum Projects {
+public enum ProjectPaths {
     ;
 
     public static Stream<String> asNames(Collection<Path> projects) {
-        return projects.stream().map(Projects::toName);
+        return projects.stream().map(ProjectPaths::toName);
     }
     public static Set<String> toNames(Collection<Path> projects) { return asNames(projects).collect(toCollection(TreeSet::new)); }
     public static String toName(Path project) {
         return project.getFileName().toString();
     }
-    public static String toMultilineString(Collection<Path> projects) { return projects.stream().map(Projects::toName).collect(joining("\n\t", "[\t", "\n]"));}
-    public static String toInlineString(Collection<Path> projects) { return projects.stream().map(Projects::toName).collect(joining(" ", "[ ", " ]"));}
+    public static String toMultilineString(Collection<Path> projects) { return projects.stream().map(ProjectPaths::toName).collect(joining("\n\t", "[\t", "\n]"));}
+    public static String toInlineString(Collection<Path> projects) { return projects.stream().map(ProjectPaths::toName).collect(joining(" ", "[ ", " ]"));}
 }

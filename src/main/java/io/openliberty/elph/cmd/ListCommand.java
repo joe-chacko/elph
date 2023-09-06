@@ -1,6 +1,6 @@
-package io.openliberty.elph;
+package io.openliberty.elph.cmd;
 
-import io.openliberty.elph.bnd.Projects;
+import io.openliberty.elph.bnd.ProjectPaths;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -11,11 +11,12 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
+import static io.openliberty.elph.bnd.ProjectPaths.asNames;
 import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.toCollection;
 
 @Command(name = "list", description = "List projects matching specified patterns.")
-public class ListCommand extends AbstractCommand implements Runnable {
+class ListCommand extends AbstractCommand implements Runnable {
     @Option(names = {"-d", "--show-deps"}, description = "Show all dependencies of matching projects")
     boolean showDeps;
     @Option(names = {"-u", "--show-users"}, description = "Show all users of matching projects")
@@ -42,7 +43,7 @@ public class ListCommand extends AbstractCommand implements Runnable {
         if (showUsers) addUsers(projects);
         if (showDeps) addDeps(projects);
 
-        var names = Projects.asNames(projects);
+        var names = asNames(projects);
         if (hiding.imported) names = names.filter(not(elph.getEclipseProjectNames()::contains));
         if (hiding.unimported) names = names.filter(elph.getEclipseProjectNames()::contains);
         names.sorted().forEach(this::displayProject);

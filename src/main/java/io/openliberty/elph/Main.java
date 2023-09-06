@@ -1,5 +1,6 @@
 package io.openliberty.elph;
 
+import io.openliberty.elph.cmd.ElphCommand;
 import picocli.CommandLine;
 
 public enum Main {

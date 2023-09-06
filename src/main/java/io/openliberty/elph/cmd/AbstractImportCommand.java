@@ -1,4 +1,4 @@
-package io.openliberty.elph;
+package io.openliberty.elph.cmd;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -12,7 +12,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Stream;
 
-import static io.openliberty.elph.bnd.Projects.toInlineString;
+import static io.openliberty.elph.bnd.ProjectPaths.toInlineString;
 import static java.util.function.Predicate.not;
 
 class AbstractImportCommand extends AbstractCommand {

@@ -1,7 +1,8 @@
-package io.openliberty.elph;
+package io.openliberty.elph.cmd;
 
 import io.openliberty.elph.bnd.BndCatalog;
-import io.openliberty.elph.io.IO;
+import io.openliberty.elph.util.IO;
+import io.openliberty.elph.util.OS;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.HelpCommand;
 import picocli.CommandLine.Mixin;
@@ -17,7 +18,7 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static io.openliberty.elph.OS.MAC;
+import static io.openliberty.elph.util.OS.MAC;
 import static java.util.Arrays.asList;
 import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.joining;
@@ -36,6 +37,7 @@ import static java.util.stream.Collectors.toCollection;
                 ImportCommand.class,
                 ReimportCommand.class,
                 ForgetCommand.class,
+                CheckCommand.class,
         }, // other subcommands are annotated methods
         defaultValueProvider = PropertiesDefaultProvider.class
 )
@@ -150,6 +152,10 @@ public class ElphCommand {
         }
         io.logf("Invoking command to press finish: ", cmd.stream().collect(joining("\" \"", "\"", "\"")));
         runExternal(getFinishCommand());
+    }
+
+    Set<Path> getBndProjects() {
+        return getCatalog().findProjects("*").collect(toCollection(TreeSet::new));
     }
 
     Set<Path> getEclipseProjects() {
