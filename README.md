@@ -50,15 +50,18 @@
 ## Setting up Eclipse
 
 #### Turn on build automatically
-- Click the `Project` tab at the top and ensure `Build Automatically` is clicked
+- Click the `Project` tab at the top and ensure `Build Automatically` is checked
 
 #### Install bnd tools
-- Install bnd tools by going to the tap at the top of Eclipse and selecting `Help > Eclipse Marketplace > BndTools > Install > Confirm`
+- Install bnd tools by going to the tab at the top of Eclipse and selecting `Help > Eclipse Marketplace > BndTools > Install > Confirm`
 
 #### Filter errors
-1. Click on the filter near the bottom of the page
-2. If you are importing projects then choose `All Errors in Project > On elements in selected projects > Apply and Close`
-3. If you are ready to develop a project then choose `Errors/Warnings on Project > On elements in selected projects > Apply and Close`
+It will help when debugging the inevitable errors that crop up to filter what you can see in the `Markers` view pane.
+- Click on the filter (a funnel icon) near the bottom of the page
+    1. Create a new filter called `All Errors` with Scope `No filter, show all elements` and `Show severities` where severity is `Error`
+    1. Create a new filter called `Errors on Project` with Scope `On elements in selected projects` and `Show severities` where severity is `Error`
+
+Use `All Errors` when importing projects and just `Errors on Project` when fixing individual problems.
 
 ## Import some projects
 - Run `elph import cnf` to import the vital first project that bndtools needs!
