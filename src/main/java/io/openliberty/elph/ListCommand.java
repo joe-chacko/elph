@@ -18,13 +18,7 @@ import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.toList;
 
 @Command(name = "list", description = "List projects matching specified patterns.")
-public class ListCommand implements Runnable {
-    @ParentCommand
-    ElphCommand elph;
-    @Spec
-    CommandSpec spec;
-    @Mixin
-    IO io;
+public class ListCommand extends AbstractCommand implements Runnable {
     @Option(names = {"-d", "--show-deps"}, description = "Show all dependencies of matching projects")
     boolean showDeps;
     @Option(names = {"-u", "--show-users"}, description = "Show all users of matching projects")

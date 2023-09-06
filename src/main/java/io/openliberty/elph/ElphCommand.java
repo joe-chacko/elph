@@ -30,6 +30,7 @@ import static java.util.stream.Collectors.toSet;
         subcommands = {
                 HelpCommand.class,
                 SetupCommand.class,
+                EclipseCommand.class,
                 ListCommand.class,
                 ImportCommand.class,
                 ReimportCommand.class,
@@ -53,9 +54,6 @@ public class ElphCommand {
     private IO io;
     private BndCatalog catalog;
     private boolean validationRequired = true;
-
-    @Command(name = "eclipse", description = "Start Eclipse with the specified workspace. This is a good test of your " + TOOL_NAME + " configuration, but it does not replace other ways of launching Eclipse.")
-    void startEclipse() {runExternal(getEclipseCmd());}
 
     void allowNullPaths() { validationRequired = false; }
     Path getOpenLibertyRepo() {

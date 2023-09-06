@@ -23,14 +23,9 @@ import static io.openliberty.elph.OS.MAC;
 import static java.util.stream.Collectors.joining;
 
 @Command(name = "setup", description = "Review/configure the directories used by " + TOOL_NAME + ".")
-public class SetupCommand implements Runnable {
+public class SetupCommand extends AbstractCommand implements Runnable {
     static final Path HOME_DIR = Paths.get(System.getProperty("user.home"));
     static final File PROPS_FILE = HOME_DIR.resolve(".elph.properties").toFile();
-
-    @ParentCommand
-    ElphCommand elph;
-    @Spec
-    CommandSpec spec;
 
     static class NonInteractiveOptions {
         @Option(names = {"--ol-repo"}, paramLabel = "DIR", description = "the local open-liberty git repository")
@@ -60,10 +55,6 @@ public class SetupCommand implements Runnable {
     Path newEclipseHome;
     Path newEclipseWorkspace;
     boolean interactive;
-
-
-    @Mixin
-    IO io;
 
     @Override
     public void run() {

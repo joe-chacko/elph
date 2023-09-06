@@ -14,15 +14,8 @@ import picocli.CommandLine.Spec;
 import java.util.List;
 
 @Command(name = ForgetCommand.SUBCOMMAND_NAME, description = "Remove items from import history.")
-public class ForgetCommand implements Runnable {
+public class ForgetCommand extends AbstractCommand implements Runnable {
     static final String SUBCOMMAND_NAME = "forget";
-
-    @ParentCommand
-    ElphCommand elph;
-    @Spec
-    CommandSpec spec;
-    @Mixin
-    IO io;
 
     static class Args {
         @Option(names = {"-a", "--all"}, required = true, description = "Remove import history completely.")

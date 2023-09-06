@@ -18,8 +18,6 @@ import static io.openliberty.elph.io.IO.Verbosity.OFF;
 import static java.util.function.Predicate.not;
 
 public class IO {
-    private final IO elph = this;
-
     enum Verbosity {OFF, INFO, LOG, DEBUG}
     /** Use statics so settings are global */
     private static Verbosity verbosity = OFF;
