@@ -19,4 +19,4 @@ Use this tool to help set up an eclipse workspace for working on Open-Liberty.
 - Run `elph import build.image build.sharedResources` to import the next two initial projects.
 - Other projects to try importing early on:
   - `com.ibm.ws.ras.instrument`
-  - `com.ibm.ws.ras.`
+  - `fattest.simplicity`
