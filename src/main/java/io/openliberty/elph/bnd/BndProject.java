@@ -12,7 +12,6 @@ import java.util.Properties;
 import java.util.stream.Stream;
 
 import static java.util.Collections.unmodifiableList;
-import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.osgi.framework.Constants.BUNDLE_SYMBOLICNAME;
 
 final class BndProject {
@@ -57,7 +56,7 @@ final class BndProject {
         String val = props.getProperty(key, "");
         return Stream.of(val.split(",\\s*"))
                 .map(s -> s.replaceFirst(";.*", ""))
-                .collect(toUnmodifiableList());
+                .toList();
     }
 
     boolean symbolicNameDiffersFromName() {

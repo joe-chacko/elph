@@ -1,20 +1,14 @@
 package io.openliberty.elph;
 
-import io.openliberty.elph.io.IO;
-import picocli.CommandLine;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
-import picocli.CommandLine.Mixin;
-import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
-import picocli.CommandLine.ParentCommand;
-import picocli.CommandLine.Spec;
 
 import java.util.List;
 
 @Command(name = ForgetCommand.SUBCOMMAND_NAME, description = "Remove items from import history.")
-public class ForgetCommand extends AbstractCommand implements Runnable {
+public class ForgetCommand extends AbstractImportCommand implements Runnable {
     static final String SUBCOMMAND_NAME = "forget";
 
     static class Args {
@@ -24,22 +18,23 @@ public class ForgetCommand extends AbstractCommand implements Runnable {
         List<String> patterns;
     }
 
-    @ArgGroup(exclusive = true)
+    @ArgGroup
     Args args;
 
     @Override
     public void run() {
-        ImportCommand ic = new ImportCommand();
-        ic.elph = elph;
-        ic.spec = spec;
-        ic.io = io;
         if (null == args) {
+            var history = getHistoryList();
+            if (history.isEmpty()) {
+                io.report("No import history recorded.");
+                return;
+            }
             io.reportf("What would you like to forget? Here is the import history:");
-            ic.reportHistory();
+            history.stream().map(s -> "  " + s).forEach(io::report);
         } else if (args.all) {
-            ic.deleteHistory();
+            deleteHistory();
         } else if (null != args.patterns) {
-            if (ic.deleteHistory(args.patterns)) return;
+            if (deleteHistory(args.patterns)) return;
             throw io.error("Nothing deleted.");
         }
     }
