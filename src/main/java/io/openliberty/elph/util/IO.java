@@ -18,7 +18,7 @@ import static io.openliberty.elph.util.IO.Verbosity.OFF;
 import static java.util.function.Predicate.not;
 
 public class IO {
-    enum Verbosity {OFF, INFO, LOG, DEBUG}
+    public enum Verbosity {OFF, INFO, LOG, DEBUG}
     /** Use statics so settings are global */
     private static Verbosity verbosity = OFF;
     private static boolean quiet;
@@ -28,7 +28,7 @@ public class IO {
     @Option(names = {"-q", "--quiet"}, description = "Suppress output.")
     private void setQuiet(boolean value) { quiet = value; }
 
-    @Option(names = {"-v", "--verbose"}, description = "Show more information about processing.")
+    @Option(names = {"-v", "--verbose"}, description = "Show more information while processing. Can be added multiple times, e.g. -vvv")
     private void setVerbose(boolean[] values) {
         verbosity = switch (values.length) {
             case 0 -> OFF;
@@ -38,7 +38,7 @@ public class IO {
         };
     }
 
-    private boolean isEnabled(Verbosity v) { return !quiet && v.compareTo(verbosity) <= 0; }
+    public boolean isEnabled(Verbosity v) { return !quiet && v.compareTo(verbosity) <= 0; }
 
     public Path chooseDirectory(String title, Path oldPath) {
         reportf("=== %s ===", title);

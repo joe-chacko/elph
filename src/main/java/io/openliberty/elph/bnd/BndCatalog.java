@@ -109,7 +109,7 @@ public class BndCatalog {
                 .map(p -> p.root)
                 // put the results into a set to eliminate duplicates
                 .collect(toUnmodifiableSet());
-        if (set.isEmpty()) throw new NoSuchElementException("No project found matching pattern \"" + pattern + '"');
+        if (set.isEmpty()) io.warn("No project found matching pattern \"" + pattern + '"');
         return set.stream();
     }
 

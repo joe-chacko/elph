@@ -37,6 +37,7 @@ import static java.util.stream.Collectors.toCollection;
                 ImportCommand.class,
                 ReimportCommand.class,
                 ForgetCommand.class,
+                CheckCommand.class,
         }, // other subcommands are annotated methods
         defaultValueProvider = PropertiesDefaultProvider.class
 )
@@ -151,6 +152,10 @@ public class ElphCommand {
         }
         io.logf("Invoking command to press finish: ", cmd.stream().collect(joining("\" \"", "\"", "\"")));
         runExternal(getFinishCommand());
+    }
+
+    Set<Path> getBndProjects() {
+        return getCatalog().findProjects("*").collect(toCollection(TreeSet::new));
     }
 
     Set<Path> getEclipseProjects() {
