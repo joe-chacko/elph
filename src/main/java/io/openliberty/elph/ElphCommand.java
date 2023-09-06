@@ -156,11 +156,13 @@ public class ElphCommand {
     Set<String> getProjectsInEclipse() {
         Path dotProjectsDir = getEclipseDotProjectsDir();
         try {
+            io.debugf("Finding known projects");
             return Files.list(dotProjectsDir)
                     .filter(Files::isDirectory)
                     .map(Path::getFileName)
                     .map(Path::toString)
                     .filter(not(s -> s.startsWith(".")))
+                    .peek(s -> io.debugf("Known project: %s", s))
                     .collect(toSet());
         } catch (IOException e) {
             throw io.error("Could not enumerate Eclipse projects despite finding metadata location: " + dotProjectsDir,
