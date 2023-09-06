@@ -41,12 +41,13 @@ public class ForgetCommand implements Runnable {
         ic.spec = spec;
         ic.io = io;
         if (null == args) {
+            io.reportf("What would you like to forget? Here is the import history:");
             ic.reportHistory();
         } else if (args.all) {
             ic.deleteHistory();
         } else if (null != args.patterns) {
-            ic.deleteHistory(args.patterns);
+            if (ic.deleteHistory(args.patterns)) return;
+            throw io.error("Nothing deleted.");
         }
     }
-
 }

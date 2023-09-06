@@ -114,11 +114,18 @@ public class ImportCommand implements Runnable {
         }
     }
 
-    void deleteHistory(List<String> patterns) {
+    boolean deleteHistory(List<String> patterns) {
         var history = getHistoryList();
+        var changes = new ArrayList<>(history);
+        // remove exact matches
         history.removeAll(patterns);
+        // remove matches that match except for options (like "--users")
         patterns.stream().map(s -> "--users " + s).forEach(history::remove);
+        // compute the changes
+        changes.removeAll(history);
+        changes.forEach(h -> io.infof("Deleted: %s", h));
         writeSettingsList(history.stream());
+        return changes.size() > 0;
     }
 
     void reportHistory() {
@@ -127,10 +134,7 @@ public class ImportCommand implements Runnable {
             io.report("No import history recorded.");
             return;
         }
-        io.reportf("");
-        io.report("=== Import History ===");
         history.stream().map(s -> "  " + s).forEach(io::report);
-        io.reportf("");
     }
 
     void initFromHistory() {
