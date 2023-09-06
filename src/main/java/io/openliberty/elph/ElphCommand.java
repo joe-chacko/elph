@@ -13,6 +13,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -20,7 +21,7 @@ import static io.openliberty.elph.OS.MAC;
 import static java.util.Arrays.asList;
 import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toSet;
+import static java.util.stream.Collectors.toCollection;
 
 @Command(
         name = ElphCommand.TOOL_NAME,
@@ -87,7 +88,7 @@ public class ElphCommand {
     void setEclipseWorkspace(Path path) {
         this.eclipseWorkspace = path;
         if (!Files.isDirectory(eclipseWorkspace)) io.warn("Eclipse workspace is not a valid directory: " + eclipseWorkspace, "Hint: this directory will be created automatically by Eclipse if started appropriately.");
-        else if (!Files.isDirectory(eclipseWorkspace.resolve(DOT_PROJECTS))) io.warn("Eclipse workspace does not containt expected subdirectory: " + eclipseWorkspace.resolve(DOT_PROJECTS));
+        else if (!Files.isDirectory(eclipseWorkspace.resolve(DOT_PROJECTS))) io.warn("Eclipse workspace does not contain expected subdirectory: " + eclipseWorkspace.resolve(DOT_PROJECTS));
     }
 
     private Path getBndWorkspace() {
@@ -151,7 +152,11 @@ public class ElphCommand {
         runExternal(getFinishCommand());
     }
 
-    Set<String> getProjectsInEclipse() {
+    Set<Path> getEclipseProjects() {
+        return getEclipseProjectNames().stream().map(getOpenLibertyRepo().resolve("dev")::resolve).collect(toCollection(TreeSet::new));
+    }
+
+    Set<String> getEclipseProjectNames() {
         Path dotProjectsDir = getEclipseDotProjectsDir();
         try {
             io.debugf("Finding known projects");
@@ -161,7 +166,7 @@ public class ElphCommand {
                     .map(Path::toString)
                     .filter(not(s -> s.startsWith(".")))
                     .peek(s -> io.debugf("Known project: %s", s))
-                    .collect(toSet());
+                    .collect(toCollection(TreeSet::new));
         } catch (IOException e) {
             throw io.error("Could not enumerate Eclipse projects despite finding metadata location: " + dotProjectsDir,
                     "Exception was " + e);

@@ -1,13 +1,8 @@
 package io.openliberty.elph;
 
-import io.openliberty.elph.io.IO;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
-import picocli.CommandLine.Mixin;
-import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
-import picocli.CommandLine.ParentCommand;
-import picocli.CommandLine.Spec;
 
 import java.io.File;
 import java.io.FileReader;
@@ -20,7 +15,6 @@ import java.util.function.Consumer;
 
 import static io.openliberty.elph.ElphCommand.TOOL_NAME;
 import static io.openliberty.elph.OS.MAC;
-import static java.util.stream.Collectors.joining;
 
 @Command(name = "setup", description = "Review/configure the directories used by " + TOOL_NAME + ".")
 public class SetupCommand extends AbstractCommand implements Runnable {
@@ -48,7 +42,7 @@ public class SetupCommand extends AbstractCommand implements Runnable {
         InteractiveOptions interactiveOptions;
     }
 
-    @ArgGroup(exclusive = true)
+    @ArgGroup
     Args args;
 
     Path newRepo;
@@ -95,11 +89,10 @@ public class SetupCommand extends AbstractCommand implements Runnable {
             dir = dir.toAbsolutePath();
             // normalize may simplify the path, but isn't guaranteed to be possible on all systems
             try {
-                Path norm = dir.normalize();
-                dir = norm;
+                dir = dir.normalize();
             } catch (Throwable ignored) {}
             prefs.put(name, dir.toString());
-            prefs.store(new FileWriter(PROPS_FILE), "Written programmatically using: " + spec.name() + " " + spec.commandLine().getParseResult().originalArgs().stream().collect(joining(" ")));
+            prefs.store(new FileWriter(PROPS_FILE), "Written programmatically using: " + spec.name() + " " + String.join(" ", spec.commandLine().getParseResult().originalArgs()));
         } catch (IOException e) {
             // TODO report error
             throw new RuntimeException(e);

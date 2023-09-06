@@ -12,7 +12,6 @@ public enum OS {
         pathToExecutable = Paths.get(relativePath);
     }
 
-
     static OS current() {return valueOf(System.getProperty("os.name").toUpperCase().split(" ")[0]);}
     static boolean is(OS os) { return current() == os; }
 }

@@ -77,13 +77,13 @@ public class IO {
     }
 
     public void info(Supplier<String> msg) { if (isEnabled(INFO)) System.out.println(msg.get()); }
-    public void infof(String msg, Object...inserts) { if (isEnabled(INFO)) System.out.println(String.format(msg, inserts)); }
+    public void infof(String msg, Object...inserts) { if (isEnabled(INFO)) System.out.printf((msg) + "%n", inserts); }
     public void log(Supplier<String> msg) { if (isEnabled(LOG)) System.out.println(msg.get()); }
-    public void logf(String msg, Object...inserts) { if (isEnabled(LOG)) System.out.println(String.format(msg, inserts)); }
+    public void logf(String msg, Object...inserts) { if (isEnabled(LOG)) System.out.printf((msg) + "%n", inserts); }
     public void debug(Supplier<String> msg) { if (isEnabled(DEBUG)) System.out.println(msg.get()); }
-    public void debugf(String msg, Object...inserts) { if (isEnabled(DEBUG)) System.out.println(String.format(msg, inserts)); }
+    public void debugf(String msg, Object...inserts) { if (isEnabled(DEBUG)) System.out.printf((msg) + "%n", inserts); }
     public void report(Object msg) { if (!quiet) System.out.println(msg); }
-    public void reportf(String msg, Object... inserts) { if (!quiet) System.out.println(String.format(msg, inserts)); }
+    public void reportf(String msg, Object... inserts) { if (!quiet) System.out.printf((msg) + "%n", inserts); }
 
     public Path verifyOrCreateFile(String desc, Path file) {
         verifyOrCreateDir("Parent of " + desc, file.getParent());

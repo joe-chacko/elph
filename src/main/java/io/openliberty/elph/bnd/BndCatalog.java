@@ -30,21 +30,21 @@ import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
 import java.util.Spliterators;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import static io.openliberty.elph.bnd.Projects.asNames;
 import static java.util.Comparator.comparing;
 import static java.util.Spliterator.ORDERED;
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toUnmodifiableSet;
 
 public class BndCatalog {
@@ -113,6 +113,10 @@ public class BndCatalog {
         return set.stream();
     }
 
+    public Stream<Path> findProjects(Stream<String> patterns) {
+        return patterns.flatMap(this::findProjects);
+    }
+
     private BndProject find(String name) {
         BndProject result = nameIndex.get(name);
         if (null == result) throw new Error("No project found with name \"" + name + '"');
@@ -123,31 +127,20 @@ public class BndCatalog {
         return nameIndex.get(name);
     }
 
-    public Stream<Path> getLeafProjects(Collection<String> roots, Set<String> ignorables) {
-        var deps = getProjectAndDependencySubgraph(roots, false);
-        // remove the projects that are in the ignorables set
-        io.debugf("getLeafProjects() found %d required projects", deps.vertexSet().size());
-        var toRemove = deps.vertexSet().stream()
-                .filter(p -> ignorables.contains(p.name))
-                .collect(toList());
-        io.debugf("getLeafProjects() ignoring %d imported projects", deps.vertexSet().size());
-        deps.removeAllVertices(toRemove);
-        // now find the leaves
-        var leaves = deps.vertexSet().stream()
-                .filter(p -> deps.outgoingEdgesOf(p).size() == 0)
+    public Set<Path> getLeavesOfSubset(Collection<Path> subset) {
+        var nodes = asNames(subset).map(this::find).collect(toUnmodifiableSet());
+        var subGraph = new AsSubgraph<>(digraph, nodes);
+        var leaves = subGraph.vertexSet().stream()
+                .filter(p -> subGraph.outgoingEdgesOf(p).size() == 0)
                 .map(p -> p.root)
                 .sorted()
-                .collect(toList());
+                .collect(toCollection(TreeSet::new));
         io.debugf("getLeafProjects() found %d leaf projects", leaves.size());
-        return leaves.stream();
+        return leaves;
     }
 
     public Stream<Path> getRequiredProjectPaths(Collection<String> projectNames) {
-        return getRequiredProjectPaths(projectNames, false);
-    }
-
-    Stream<Path> getRequiredProjectPaths(Collection<String> projectNames, boolean ignoreMissing) {
-        var deps = getProjectAndDependencySubgraph(projectNames, ignoreMissing);
+        var deps = getProjectAndDependencySubgraph(projectNames);
         var rDeps = new EdgeReversedGraph<>(deps);
         var topo = new TopologicalOrderIterator<>(rDeps, comparing(p -> p.name));
         return stream(topo).map(p -> p.root);
@@ -163,12 +156,12 @@ public class BndCatalog {
                 .distinct();
     }
 
-    Graph<BndProject, ?> getProjectAndDependencySubgraph(Collection<String> projectNames, boolean ignoreMissing) {
+    Graph<BndProject, ?> getProjectAndDependencySubgraph(Collection<String> projectNames) {
         // collect the named projects to start with
         var projects = projectNames.stream()
-                .map(ignoreMissing ? this::maybeFind : this::find)
+                .map(this::find)
                 .filter(Objects::nonNull)
-                .collect(Collectors.toUnmodifiableSet());
+                .collect(toUnmodifiableSet());
         var results = new HashSet<BndProject>();
         // collect all known dependencies, breadth-first
         while (!projects.isEmpty()) {
@@ -180,8 +173,7 @@ public class BndCatalog {
                     .filter(not(results::contains))
                     .collect(toUnmodifiableSet());
         }
-        var deps = new AsSubgraph<>(digraph, results);
-        return deps;
+        return new AsSubgraph<>(digraph, results);
     }
 
     private static <T> Stream<T> stream(Iterator<T> iterator) {
@@ -189,5 +181,5 @@ public class BndCatalog {
         return StreamSupport.stream(spl, false);
     }
 
-    private static <T> Predicate<T> not(Predicate<T> predicate) { return t -> !!!predicate.test(t); }
+    private static <T> Predicate<T> not(Predicate<T> predicate) { return t -> !predicate.test(t); }
 }
