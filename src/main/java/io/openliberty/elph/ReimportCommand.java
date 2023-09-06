@@ -8,15 +8,8 @@ import picocli.CommandLine.ParentCommand;
 import picocli.CommandLine.Spec;
 
 @Command(name = ReimportCommand.SUBCOMMAND_NAME, description = "Complete previous import actions, or re-interpret them after changes to OpenLiberty. ")
-public class ReimportCommand implements Runnable {
+public class ReimportCommand extends AbstractCommand implements Runnable {
     static final String SUBCOMMAND_NAME = "reimport";
-
-    @ParentCommand
-    ElphCommand elph;
-    @Spec
-    CommandSpec spec;
-    @Mixin
-    IO io;
 
     @Override
     public void run() {
@@ -28,5 +21,4 @@ public class ReimportCommand implements Runnable {
         ic.initFromHistory();
         ic.importInBatches();
     }
-
 }

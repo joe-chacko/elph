@@ -1,6 +1,7 @@
 package io.openliberty.elph;
 
 import io.openliberty.elph.io.IO;
+import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Model.CommandSpec;
@@ -13,22 +14,24 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Stream;
 
+import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.toList;
 
 @Command(name = "list", description = "List projects matching specified patterns.")
-public class ListCommand implements Runnable {
-    @ParentCommand
-    ElphCommand elph;
-    @Spec
-    CommandSpec spec;
-    @Mixin
-    IO io;
+public class ListCommand extends AbstractCommand implements Runnable {
     @Option(names = {"-d", "--show-deps"}, description = "Show all dependencies of matching projects")
     boolean showDeps;
     @Option(names = {"-u", "--show-users"}, description = "Show all users of matching projects")
     boolean showUsers;
-    @Option(names = {"-h", "--hide-imported"}, description = "Hide already imported projects")
-    boolean hideImported;
+
+    static class Hiding {
+        @Option(names = {"-h", "--hide-imported"}, description = "Hide already imported projects")
+        boolean imported;
+        @Option(names = {"-H", "--hide-unimported"}, description = "Hide unimported projects")
+        boolean unimported;
+    }
+    @ArgGroup(exclusive = true)
+    Hiding hiding = new Hiding();
 
     @Parameters(paramLabel = "PATTERN", arity = "1..*", description = "projects to be imported")
     List<String> pattern;
@@ -49,13 +52,13 @@ public class ListCommand implements Runnable {
             var names = projects.map(Path::getFileName).map(Path::toString).collect(toList());
             projects = elph.getCatalog().getRequiredProjectPaths(names);
         }
-        if (hideImported) {
-            projects = projects.filter(elph.getProjectsInEclipse()::contains);
-        }
-        projects.sorted().forEach(this::displayProject);
+        var names = projects.map(Path::getFileName).map(Path::toString);
+        if (hiding.imported) names = names.filter(not(elph.getProjectsInEclipse()::contains));
+        if (hiding.unimported) names = names.filter(elph.getProjectsInEclipse()::contains);
+        names.sorted().forEach(this::displayProject);
     }
 
-    private void displayProject(Path path) {
-        io.report(path.getFileName());
+    private void displayProject(String name) {
+        io.report(name);
     }
 }

@@ -26,14 +26,15 @@ import static java.util.stream.Collectors.toSet;
         name = ElphCommand.TOOL_NAME,
         mixinStandardHelpOptions = true,
         description = "Eclipse Liberty Project Helper - helps to create a usable Eclipse workspace for Open Liberty development",
-        version = "Eclipse Liberty Project Helper v0.9",
+        version = "Eclipse Liberty Project Helper v0.10",
         subcommands = {
                 HelpCommand.class,
-                ConfigureCommand.class,
-                ForgetCommand.class,
-                ImportCommand.class,
+                SetupCommand.class,
+                EclipseCommand.class,
                 ListCommand.class,
-                ReimportCommand.class
+                ImportCommand.class,
+                ReimportCommand.class,
+                ForgetCommand.class,
         }, // other subcommands are annotated methods
         defaultValueProvider = PropertiesDefaultProvider.class
 )
@@ -53,9 +54,6 @@ public class ElphCommand {
     private IO io;
     private BndCatalog catalog;
     private boolean validationRequired = true;
-
-    @Command(name = "start-eclipse", description = "Start Eclipse with the specified workspace. This is a good test of your " + TOOL_NAME + " configuration, but it does not replace other ways of launching Eclipse.")
-    void startEclipse() {runExternal(getEclipseCmd());}
 
     void allowNullPaths() { validationRequired = false; }
     Path getOpenLibertyRepo() {
@@ -156,11 +154,13 @@ public class ElphCommand {
     Set<String> getProjectsInEclipse() {
         Path dotProjectsDir = getEclipseDotProjectsDir();
         try {
+            io.debugf("Finding known projects");
             return Files.list(dotProjectsDir)
                     .filter(Files::isDirectory)
                     .map(Path::getFileName)
                     .map(Path::toString)
                     .filter(not(s -> s.startsWith(".")))
+                    .peek(s -> io.debugf("Known project: %s", s))
                     .collect(toSet());
         } catch (IOException e) {
             throw io.error("Could not enumerate Eclipse projects despite finding metadata location: " + dotProjectsDir,

@@ -28,18 +28,12 @@ import static java.util.stream.Collectors.toList;
 
 @Command(name = ImportCommand.SUBCOMMAND_NAME, description = "Add project and its dependencies to Eclipse. " +
         "It is recommended to have your terminal and your Eclipse window both visible at the same time. ")
-public class ImportCommand implements Runnable {
+public class ImportCommand extends AbstractCommand implements Runnable {
     static final Path HOME_DIR = Paths.get(System.getProperty("user.home"));
     static final String SUBCOMMAND_NAME = "import";
     static final String SETTINGS_LIST_FILE = SUBCOMMAND_NAME + ".hist";
     static final String SETTINGS_LIST_FILE_DESC = TOOL_NAME + " " + SUBCOMMAND_NAME + " history file";
 
-    @ParentCommand
-    ElphCommand elph;
-    @Spec
-    CommandSpec spec;
-    @Mixin
-    IO io;
     private final List<String> projects = new ArrayList<>();
     private boolean noHistory;
 
@@ -114,11 +108,18 @@ public class ImportCommand implements Runnable {
         }
     }
 
-    void deleteHistory(List<String> patterns) {
+    boolean deleteHistory(List<String> patterns) {
         var history = getHistoryList();
+        var changes = new ArrayList<>(history);
+        // remove exact matches
         history.removeAll(patterns);
+        // remove matches that match except for options (like "--users")
         patterns.stream().map(s -> "--users " + s).forEach(history::remove);
+        // compute the changes
+        changes.removeAll(history);
+        changes.forEach(h -> io.infof("Deleted: %s", h));
         writeSettingsList(history.stream());
+        return changes.size() > 0;
     }
 
     void reportHistory() {
@@ -127,10 +128,7 @@ public class ImportCommand implements Runnable {
             io.report("No import history recorded.");
             return;
         }
-        io.reportf("");
-        io.report("=== Import History ===");
         history.stream().map(s -> "  " + s).forEach(io::report);
-        io.reportf("");
     }
 
     void initFromHistory() {

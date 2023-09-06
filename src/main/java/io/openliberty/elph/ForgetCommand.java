@@ -14,15 +14,8 @@ import picocli.CommandLine.Spec;
 import java.util.List;
 
 @Command(name = ForgetCommand.SUBCOMMAND_NAME, description = "Remove items from import history.")
-public class ForgetCommand implements Runnable {
+public class ForgetCommand extends AbstractCommand implements Runnable {
     static final String SUBCOMMAND_NAME = "forget";
-
-    @ParentCommand
-    ElphCommand elph;
-    @Spec
-    CommandSpec spec;
-    @Mixin
-    IO io;
 
     static class Args {
         @Option(names = {"-a", "--all"}, required = true, description = "Remove import history completely.")
@@ -41,12 +34,13 @@ public class ForgetCommand implements Runnable {
         ic.spec = spec;
         ic.io = io;
         if (null == args) {
+            io.reportf("What would you like to forget? Here is the import history:");
             ic.reportHistory();
         } else if (args.all) {
             ic.deleteHistory();
         } else if (null != args.patterns) {
-            ic.deleteHistory(args.patterns);
+            if (ic.deleteHistory(args.patterns)) return;
+            throw io.error("Nothing deleted.");
         }
     }
-
 }
