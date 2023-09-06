@@ -1,4 +1,4 @@
-package io.openliberty.elph.io;
+package io.openliberty.elph.util;
 
 import picocli.CommandLine.Option;
 
@@ -11,10 +11,10 @@ import java.util.Scanner;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import static io.openliberty.elph.io.IO.Verbosity.DEBUG;
-import static io.openliberty.elph.io.IO.Verbosity.INFO;
-import static io.openliberty.elph.io.IO.Verbosity.LOG;
-import static io.openliberty.elph.io.IO.Verbosity.OFF;
+import static io.openliberty.elph.util.IO.Verbosity.DEBUG;
+import static io.openliberty.elph.util.IO.Verbosity.INFO;
+import static io.openliberty.elph.util.IO.Verbosity.LOG;
+import static io.openliberty.elph.util.IO.Verbosity.OFF;
 import static java.util.function.Predicate.not;
 
 public class IO {

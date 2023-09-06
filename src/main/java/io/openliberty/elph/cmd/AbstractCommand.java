@@ -1,7 +1,7 @@
-package io.openliberty.elph;
+package io.openliberty.elph.cmd;
 
-import io.openliberty.elph.bnd.Projects;
-import io.openliberty.elph.io.IO;
+import io.openliberty.elph.bnd.ProjectPaths;
+import io.openliberty.elph.util.IO;
 import picocli.CommandLine;
 
 import java.nio.file.Path;
@@ -10,6 +10,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Stream;
 
+import static io.openliberty.elph.bnd.ProjectPaths.toNames;
 import static java.util.stream.Collectors.toCollection;
 
 abstract class AbstractCommand {
@@ -21,12 +22,12 @@ abstract class AbstractCommand {
     IO io;
 
     void addDeps(Collection<Path> projects) {
-        var names = Projects.toNames(projects);
+        var names = toNames(projects);
         elph.getCatalog().getRequiredProjectPaths(names).forEach(projects::add);
     }
 
     void addUsers(Collection<Path> projects) {
-        var names = Projects.toNames(projects);
+        var names = toNames(projects);
         elph.getCatalog().getDependentProjectPaths(names).forEach(projects::add);
     }
 

@@ -1,7 +1,8 @@
-package io.openliberty.elph;
+package io.openliberty.elph.cmd;
 
 import io.openliberty.elph.bnd.BndCatalog;
-import io.openliberty.elph.io.IO;
+import io.openliberty.elph.util.IO;
+import io.openliberty.elph.util.OS;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.HelpCommand;
 import picocli.CommandLine.Mixin;
@@ -17,7 +18,7 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static io.openliberty.elph.OS.MAC;
+import static io.openliberty.elph.util.OS.MAC;
 import static java.util.Arrays.asList;
 import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.joining;

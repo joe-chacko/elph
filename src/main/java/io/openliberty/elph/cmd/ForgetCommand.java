@@ -1,4 +1,4 @@
-package io.openliberty.elph;
+package io.openliberty.elph.cmd;
 
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
@@ -8,7 +8,7 @@ import picocli.CommandLine.Parameters;
 import java.util.List;
 
 @Command(name = ForgetCommand.SUBCOMMAND_NAME, description = "Remove items from import history.")
-public class ForgetCommand extends AbstractImportCommand implements Runnable {
+class ForgetCommand extends AbstractImportCommand implements Runnable {
     static final String SUBCOMMAND_NAME = "forget";
 
     static class Args {

@@ -12,7 +12,7 @@
  */
 package io.openliberty.elph.bnd;
 
-import io.openliberty.elph.io.IO;
+import io.openliberty.elph.util.IO;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.jgrapht.Graph;
@@ -41,7 +41,7 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import static io.openliberty.elph.bnd.Projects.asNames;
+import static io.openliberty.elph.bnd.ProjectPaths.asNames;
 import static java.util.Comparator.comparing;
 import static java.util.Spliterator.ORDERED;
 import static java.util.stream.Collectors.toCollection;
