@@ -127,13 +127,15 @@ public class BndCatalog {
         return nameIndex.get(name);
     }
 
-    public Set<Path> getLeavesOfSubset(Collection<Path> subset) {
+    public Set<Path> getLeavesOfSubset(Collection<Path> subset, int max) {
+        assert max > 0;
         var nodes = asNames(subset).map(this::find).collect(toUnmodifiableSet());
         var subGraph = new AsSubgraph<>(digraph, nodes);
         var leaves = subGraph.vertexSet().stream()
                 .filter(p -> subGraph.outgoingEdgesOf(p).size() == 0)
                 .map(p -> p.root)
                 .sorted()
+                .limit(max)
                 .collect(toCollection(TreeSet::new));
         io.debugf("getLeafProjects() found %d leaf projects", leaves.size());
         return leaves;

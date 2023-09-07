@@ -12,6 +12,8 @@ import picocli.CommandLine.PropertiesDefaultProvider;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
@@ -129,6 +131,28 @@ public class ElphCommand {
         }
     }
 
+    List<List<String>> getBunchedEclipseCmds(Collection<Path> paths) {
+        // Allow an arg list of total String length 4096.
+        // Even Windows XP allows twice this length for the whole command.
+        // So we should still be safe even after adding the rest of the Eclipse command line.
+        final int max = 4096;
+        List<List<String>> cmds = new ArrayList<>();
+        List<Path> buffer = new ArrayList<>();
+        int length = 0;
+        for (Path p: paths) {
+            // flush the buffer into a new command when we reach the limit
+            if (length + p.toString().length() > max) {
+                cmds.add(getEclipseCmd(buffer.toArray(Path[]::new)));
+                length = 0;
+                buffer.clear();
+            }
+            buffer.add(p);
+        }
+        // put any remaining paths into a final eclipse command
+        cmds.add(getEclipseCmd(buffer.toArray(Path[]::new)));
+        return cmds;
+    }
+
     List<String> getEclipseCmd(Path...args) {
         if (OS.is(MAC)) {
             return Stream.of(
@@ -144,15 +168,8 @@ public class ElphCommand {
         }
     }
 
-    void pressFinish() {
-        var cmd = getFinishCommand();
-        if (null == cmd) {
-            io.logf("No configured way to press Finish - skipping");
-            return;
-        }
-        io.logf("Invoking command to press finish: ", cmd.stream().collect(joining("\" \"", "\"", "\"")));
-        runExternal(getFinishCommand());
-    }
+    void pressFinish() { if (isFinishCommandAvailable()) runExternal(getFinishCommand()); }
+    boolean isFinishCommandAvailable() { return null != getFinishCommand(); }
 
     Set<Path> getBndProjects() {
         return getCatalog().findProjects("*").collect(toCollection(TreeSet::new));
