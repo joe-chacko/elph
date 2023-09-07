@@ -8,7 +8,7 @@ import picocli.CommandLine.Parameters;
 import java.util.List;
 
 @Command(name = ForgetCommand.SUBCOMMAND_NAME, description = "Remove items from import history.")
-class ForgetCommand extends AbstractImportCommand implements Runnable {
+class ForgetCommand extends AbstractHistoryCommand implements Runnable {
     static final String SUBCOMMAND_NAME = "forget";
 
     static class Args {

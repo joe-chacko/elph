@@ -8,6 +8,7 @@ import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static io.openliberty.elph.bnd.ProjectPaths.toNames;
@@ -44,10 +45,12 @@ abstract class AbstractCommand {
 
     /**
      * Removes (and returns) the subset of projects that do not depend on any other projects in the supplied collection.
+     * @param max the maximum number of leaf projects to remove
      * @return the set of projects that were removed
      */
-    Set<Path> removeLeaves(Collection<Path> projects) {
-        var leaves = elph.getCatalog().getLeavesOfSubset(projects);
+    Set<Path> removeLeaves(Collection<Path> projects, int max) {
+        assert max > 0;
+        var leaves = elph.getCatalog().getLeavesOfSubset(projects, max);
         projects.removeAll(leaves);
         return leaves;
     }

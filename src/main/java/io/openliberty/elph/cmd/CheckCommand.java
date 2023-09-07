@@ -16,7 +16,7 @@ import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.toSet;
 
 @Command(name = "check", description = "Check the Eclipse workspace for issues. Increase verbosity to see more detail.")
-class CheckCommand extends AbstractImportCommand implements Runnable {
+class CheckCommand extends AbstractHistoryCommand implements Runnable {
     @Override
     public void run() {
         var bndProjects = elph.getBndProjects();
