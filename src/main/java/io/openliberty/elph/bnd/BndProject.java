@@ -64,7 +64,7 @@ final class BndProject {
     }
 
     @Override
-    public String toString() {
-        return name;
-    }
+    public String toString() { return name; }
+
+    public String details() { return "Project{ root=%s name=%s symbolicName=%s dependencies=%s }".formatted(root.getFileName(), name, symbolicName, dependencies); }
 }

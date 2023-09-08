@@ -51,7 +51,7 @@ class AbstractImportCommand extends AbstractHistoryCommand {
         while (depCount > 0) {
             leaves = removeLeaves(deps, maxBatchSize);
             if (deps.size() == depCount) {
-                throw io.error("Project import seems to be stuck in a loop — Open Liberty or this tool needs fixing",
+                throw io.error("Project import seems to be stuck in a loop - Open Liberty or this tool needs fixing",
                         "leaves = " + toInlineString(leaves),
                         "deps = " + toInlineString(deps));
             }

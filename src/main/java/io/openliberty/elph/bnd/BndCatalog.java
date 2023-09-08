@@ -123,10 +123,6 @@ public class BndCatalog {
         return result;
     }
 
-    private BndProject maybeFind(String name) {
-        return nameIndex.get(name);
-    }
-
     public Set<Path> getLeavesOfSubset(Collection<Path> subset, int max) {
         assert max > 0;
         var nodes = asNames(subset).map(this::find).collect(toUnmodifiableSet());
