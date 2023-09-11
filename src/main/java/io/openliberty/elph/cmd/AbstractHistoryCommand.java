@@ -38,8 +38,9 @@ public class AbstractHistoryCommand extends AbstractCommand {
                 .map(s -> s.substring("--users ".length()));
         var importsWithoutUsers = imports.stream()
                 .filter(not(s -> s.startsWith("--users ")));
-        var projects = findProjects(importsWithUsers, true);
-        projects.addAll(findProjects(importsWithoutUsers, false));
+        var projects = findProjects(importsWithUsers);
+        addUsers(projects);
+        projects.addAll(findProjects(importsWithoutUsers));
         return projects;
     }
 

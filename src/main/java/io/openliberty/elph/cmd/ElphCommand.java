@@ -40,7 +40,7 @@ import static java.util.stream.Collectors.toCollection;
                 ReimportCommand.class,
                 ForgetCommand.class,
                 CheckCommand.class,
-        }, // other subcommands are annotated methods
+        }, // subcommands can also be annotated methods
         defaultValueProvider = PropertiesDefaultProvider.class
 )
 public class ElphCommand {

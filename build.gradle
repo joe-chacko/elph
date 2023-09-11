@@ -28,4 +28,6 @@ dependencies {
     implementation 'info.picocli:picocli:4.7.4'
     implementation 'org.osgi:osgi.core:8.0.0'
     implementation 'org.apache.commons:commons-collections4:4.4'
+    implementation 'org.apache.commons:commons-lang3:3.8'
+    implementation 'biz.aQute.bnd:biz.aQute.bnd:6.4.1'
 }

@@ -31,7 +31,6 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
 import java.util.Spliterators;
@@ -52,19 +51,23 @@ public class BndCatalog {
         return new SimpleDirectedGraph<>(DefaultEdge.class);
     }
 
-    private final IO io;
-    private final SimpleDirectedGraph<BndProject, DefaultEdge> digraph = newGraph();
-    private final Map<String, BndProject> nameIndex = new TreeMap<>();
-    private final MultiValuedMap<Path, BndProject> pathIndex = new HashSetValuedHashMap<>();
+    final Path root;
+    final IO io;
+    final SimpleDirectedGraph<BndProject, DefaultEdge> digraph = newGraph();
+    final Map<String, BndProject> nameIndex = new TreeMap<>();
+    final MultiValuedMap<Path, BndProject> pathIndex = new HashSetValuedHashMap<>();
+    volatile boolean bndQueried;
 
     public BndCatalog(Path bndWorkspace, IO io) throws IOException {
         this.io = io;
+        this.root = bndWorkspace;
         // add the vertices
-        try (var files = Files.list(bndWorkspace)) {files
-                .filter(Files::isDirectory) // for every subdirectory
-                .filter(p -> Files.exists(p.resolve("bnd.bnd"))) // that has a bnd file
-                .map(BndProject::new) // create a Project object
-                .forEach(digraph::addVertex); // add it as a vertex to the graph
+        try (var files = Files.list(bndWorkspace)) {
+            files
+                    .filter(Files::isDirectory)                            // for every subdirectory
+                    .filter(p -> Files.exists(p.resolve("bnd.bnd"))) // that has a bnd file
+                    .map(BndProject::new)                                  // create a Project object
+                    .forEach(digraph::addVertex);                          // add it as a vertex to the graph
         }
 
         // index projects by name
@@ -74,20 +77,32 @@ public class BndCatalog {
                 .filter(BndProject::symbolicNameDiffersFromName)
                 .forEach(p -> nameIndex.put(p.symbolicName, p));
 
+
         // index projects by name and by symbolic name as paths
         // (even if those paths don't exist)
         // to allow globbing searches on them
         nameIndex.forEach((name, project) -> pathIndex.put(Paths.get(name), project));
 
         // add the edges
-        digraph.vertexSet().forEach(p -> p.dependencies.stream()
+        digraph.vertexSet().forEach(p -> p.initialDeps.stream()
                 .map(nameIndex::get)
                 .filter(Objects::nonNull)
                 .filter(not(p::equals))
                 .forEach(q -> digraph.addEdge(p, q)));
+
+        // make everything depend on 'cnf'
+        var cnf = nameIndex.get("cnf");
+        digraph.vertexSet().stream().filter(not(cnf::equals)).forEach(p -> digraph.addEdge(p, cnf));
     }
 
-    boolean hasProject(String name) { return nameIndex.containsKey(name); }
+    void queryBnd() {
+        if (bndQueried) return;
+        synchronized (this) {
+            if (bndQueried) return;
+            var bnd = new BndWorkspace(io, root, nameIndex::get);
+            digraph.vertexSet().forEach(p -> bnd.getBuildAndTestDependencies(p).forEach(q -> digraph.addEdge(p,q)));
+        }
+    }
 
     Path getProject(String name) { return find(name).root; }
 
@@ -124,6 +139,7 @@ public class BndCatalog {
     }
 
     public Set<Path> getLeavesOfSubset(Collection<Path> subset, int max) {
+        queryBnd();
         assert max > 0;
         var nodes = asNames(subset).map(this::find).collect(toUnmodifiableSet());
         var subGraph = new AsSubgraph<>(digraph, nodes);
@@ -138,6 +154,7 @@ public class BndCatalog {
     }
 
     public Stream<Path> getRequiredProjectPaths(Collection<String> projectNames) {
+        queryBnd();
         var deps = getProjectAndDependencySubgraph(projectNames);
         var rDeps = new EdgeReversedGraph<>(deps);
         var topo = new TopologicalOrderIterator<>(rDeps, comparing(p -> p.name));
@@ -145,6 +162,7 @@ public class BndCatalog {
     }
 
     public Stream<Path> getDependentProjectPaths(Collection<String> projectNames) {
+        queryBnd();
         return projectNames.stream()
                 .map(this::find)
                 .map(digraph::incomingEdgesOf)
@@ -155,6 +173,7 @@ public class BndCatalog {
     }
 
     Graph<BndProject, ?> getProjectAndDependencySubgraph(Collection<String> projectNames) {
+        queryBnd();
         // collect the named projects to start with
         var projects = projectNames.stream()
                 .map(this::find)
@@ -180,4 +199,10 @@ public class BndCatalog {
     }
 
     private static <T> Predicate<T> not(Predicate<T> predicate) { return t -> !predicate.test(t); }
+
+    public String getProjectDetails(Path path) {
+        String name = path.getFileName().toString();
+        BndProject project = nameIndex.get(name);
+        return project.details();
+    }
 }

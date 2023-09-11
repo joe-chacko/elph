@@ -1,6 +1,5 @@
 package io.openliberty.elph.cmd;
 
-import io.openliberty.elph.bnd.ProjectPaths;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -9,11 +8,9 @@ import picocli.CommandLine.Parameters;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
-import java.util.TreeSet;
 
 import static io.openliberty.elph.bnd.ProjectPaths.asNames;
 import static java.util.function.Predicate.not;
-import static java.util.stream.Collectors.toCollection;
 
 @Command(name = "list", description = "List projects matching specified patterns.")
 class ListCommand extends AbstractCommand implements Runnable {
@@ -36,20 +33,12 @@ class ListCommand extends AbstractCommand implements Runnable {
 
     @Override
     public void run() {
-        List<String> patterns = this.patterns;
-        Set<Path> projects = patterns.stream()
-                .flatMap(elph.getCatalog()::findProjects)
-                .collect(toCollection(TreeSet::new));
+        var projects = findProjects(patterns.stream());
         if (showUsers) addUsers(projects);
         if (showDeps) addDeps(projects);
-
         var names = asNames(projects);
         if (hiding.imported) names = names.filter(not(elph.getEclipseProjectNames()::contains));
         if (hiding.unimported) names = names.filter(elph.getEclipseProjectNames()::contains);
-        names.sorted().forEach(this::displayProject);
-    }
-
-    private void displayProject(String name) {
-        io.report(name);
+        names.sorted().forEach(io::report);
     }
 }

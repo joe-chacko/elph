@@ -1,6 +1,5 @@
 package io.openliberty.elph.cmd;
 
-import picocli.CommandLine;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.TypeConversionException;
 
@@ -65,5 +64,4 @@ class AbstractImportCommand extends AbstractHistoryCommand {
             if (pauseBetweenBatches) io.pause();
         }
     }
-
 }
