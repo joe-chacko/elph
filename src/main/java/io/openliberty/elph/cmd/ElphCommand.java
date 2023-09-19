@@ -37,6 +37,7 @@ import static java.util.stream.Collectors.toCollection;
                 EclipseCommand.class,
                 ListCommand.class,
                 ImportCommand.class,
+                ProjectCommand.class,
                 ReimportCommand.class,
                 ForgetCommand.class,
                 CheckCommand.class,
