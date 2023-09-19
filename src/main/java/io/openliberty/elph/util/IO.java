@@ -16,6 +16,9 @@ import static io.openliberty.elph.util.IO.Verbosity.INFO;
 import static io.openliberty.elph.util.IO.Verbosity.LOG;
 import static io.openliberty.elph.util.IO.Verbosity.OFF;
 import static java.util.function.Predicate.not;
+import static picocli.CommandLine.Help.Ansi.Style.bold;
+import static picocli.CommandLine.Help.Ansi.Style.faint;
+import static picocli.CommandLine.Help.Ansi.Style.reset;
 
 public class IO {
     public enum Verbosity {OFF, INFO, LOG, DEBUG}
@@ -41,10 +44,11 @@ public class IO {
     public boolean isEnabled(Verbosity v) { return !quiet && v.compareTo(verbosity) <= 0; }
 
     public Path chooseDirectory(String title, Path oldPath) {
-        reportf("=== %s ===", title);
         String oldVal = stringify(oldPath);
-        reportf("   was: %s", oldVal);
-        return inputf(Paths::get, "   new %s (blank to leave unchanged): ", title);
+        return inputf(Paths::get,
+                "%s%40s%s %s(%s)%s: ",
+                bold.on(), title, reset.on(),
+                faint.on(), oldVal, reset.on());
     }
 
     public <T> T input(Function<String, T> converter, String prompt) {
@@ -55,12 +59,11 @@ public class IO {
 
     public void reportDirectory(String title, Path oldPath, Path newPath) {
         if (null != newPath) {
-            reportf("=== %s ===", title);
-            reportf("   was: %s", stringify(oldPath));
-            reportf("    is: %s", stringify(newPath));
+            reportf("%s%40s:%s %s %s(was: %s)%s", bold.on(), title, reset.on(),
+                    stringify(newPath),
+                    faint.on(), stringify(oldPath), faint.off());
         } else {
-            reportf("=== %s ===", title);
-            reportf("        %s", stringify(oldPath));
+            reportf("%s%40s:%s %s", bold.on(), title, reset.on(), stringify(oldPath));
         }
     }
 
