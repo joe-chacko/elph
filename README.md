@@ -44,6 +44,7 @@
 ## Running ELPH
 - Invoke `elph help` &mdash; this will build the tool and give a description of each of ELPH's commands.
 - Invoke `elph setup -i` &mdash; this will configure it interactively. Run it again without the `-i` to display (and validate) the config.
+- Invoke `elph analyze` &mdash; this will take a little while (under 1 minute) to query bnd about your workspace. 
 - Invoke `elph list '*yoko*'` &mdash; this will list all the known projects that contain 'yoko' in the title.
 - Invoke `elph eclipse` &mdash; this will start Eclipse with the configured workspace.
 
