@@ -42,8 +42,8 @@
 
 
 ## Running ELPH
-- Invoke `elph help` &mdash; this will give a description of each of ELPH's commands.
-- Invoke `elph setup -i` &mdash; this will build the tool and then configure it interactively. Run it again without the `-i` to display (and validate) the config.
+- Invoke `elph help` &mdash; this will build the tool and give a description of each of ELPH's commands.
+- Invoke `elph setup -i` &mdash; this will configure it interactively. Run it again without the `-i` to display (and validate) the config.
 - Invoke `elph list '*yoko*'` &mdash; this will list all the known projects that contain 'yoko' in the title.
 - Invoke `elph eclipse` &mdash; this will start Eclipse with the configured workspace.
 
@@ -56,7 +56,7 @@
 - Install bnd tools by going to the tab at the top of Eclipse and selecting `Help > Eclipse Marketplace > BndTools > Install > Confirm`
 
 #### Filter errors
-It will help when debugging the inevitable errors that crop up to filter what you can see in the `Markers` view pane.
+It will help when debugging Eclipse errors is to filter what you can see in the `Markers` view pane.
 - Click on the filter (a funnel icon) near the bottom of the page
     1. Create a new filter called `All Errors` with Scope `No filter, show all elements` and `Show severities` where severity is `Error`
     1. Create a new filter called `Errors on Project` with Scope `On elements in selected projects` and `Show severities` where severity is `Error`
