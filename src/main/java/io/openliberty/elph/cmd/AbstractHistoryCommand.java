@@ -14,6 +14,8 @@ import java.util.stream.Stream;
 import static java.util.function.Predicate.not;
 
 public class AbstractHistoryCommand extends AbstractCommand {
+    private static final String HIST_FILE = "import.hist";
+    private static final String HIST_FILE_DESC = "import history file";
     protected boolean noHistory;
 
     void addToHistory(List<String> patterns, boolean includeUsers) {
@@ -27,7 +29,7 @@ public class AbstractHistoryCommand extends AbstractCommand {
         try {
             return Files.readAllLines(historyFile);
         } catch (IOException e) {
-            throw io.error("Could not open the " + ImportCommand.SETTINGS_LIST_FILE_DESC + " for reading: " + historyFile);
+            throw io.error("Could not open the " + HIST_FILE_DESC + " for reading: " + historyFile);
         }
     }
 
@@ -38,8 +40,9 @@ public class AbstractHistoryCommand extends AbstractCommand {
                 .map(s -> s.substring("--users ".length()));
         var importsWithoutUsers = imports.stream()
                 .filter(not(s -> s.startsWith("--users ")));
-        var projects = findProjects(importsWithUsers, true);
-        projects.addAll(findProjects(importsWithoutUsers, false));
+        var projects = findProjects(importsWithUsers);
+        addUsers(projects);
+        projects.addAll(findProjects(importsWithoutUsers));
         return projects;
     }
 
@@ -63,10 +66,10 @@ public class AbstractHistoryCommand extends AbstractCommand {
     boolean deleteHistory(List<String> patterns) {
         var history = getHistoryList();
         var changes = new ArrayList<>(history);
-        // remove exact matches
-        history.removeAll(patterns);
-        // remove matches that match except for options (like "--users")
-        patterns.stream().map(s -> "--users " + s).forEach(history::remove);
+
+        normalize(patterns.stream())
+                .peek(history::remove) // remove exact matches
+                .map(s -> "--users " + s).forEach(history::remove); // remove matches with "--users"
         // compute the changes
         changes.removeAll(history);
         changes.forEach(h -> io.infof("Deleted: %s", h));
@@ -75,8 +78,8 @@ public class AbstractHistoryCommand extends AbstractCommand {
     }
 
     private Path getHistoryFile() {
-        String desc = ImportCommand.SETTINGS_LIST_FILE_DESC;
-        Path path = elph.getWorkspaceSettingsDir().resolve(ImportCommand.SETTINGS_LIST_FILE);
+        String desc = HIST_FILE_DESC;
+        Path path = elph.getWorkspaceSettingsDir().resolve(AbstractHistoryCommand.HIST_FILE);
         if (!Files.exists(path)) noHistory = true;
         return io.verifyOrCreateFile(desc, path);
     }
@@ -85,7 +88,7 @@ public class AbstractHistoryCommand extends AbstractCommand {
         // write this out to file
         Path settingsFile = getHistoryFile();
         try (FileWriter fw = new FileWriter(settingsFile.toFile()); PrintWriter pw = new PrintWriter(fw)) {
-            newNarrative.distinct().forEach(pw::println);
+            normalize(newNarrative).distinct().forEach(pw::println);
         } catch (IOException e) {
             throw io.error("Failed to open history for re-writing: " + settingsFile);
         }

@@ -1,14 +1,13 @@
 package io.openliberty.elph.cmd;
 
-import io.openliberty.elph.bnd.ProjectPaths;
 import io.openliberty.elph.util.IO;
 import picocli.CommandLine;
+import picocli.CommandLine.Option;
 
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static io.openliberty.elph.bnd.ProjectPaths.toNames;
@@ -22,9 +21,22 @@ abstract class AbstractCommand {
     @CommandLine.Mixin
     IO io;
 
+    Stream<String> normalize(Stream<String> patterns) {
+        return patterns.map(s -> s.replace('%', '*'));
+    }
+
+    Set<Path> findProjects(Stream<String> patterns, boolean includeUsers) {
+        Set<Path> result = findProjects(patterns);
+        if (includeUsers) addUsers(result);
+        return result;
+    }
+
+    Set<Path> findProjects(Stream<String> patterns) {
+        return elph.getCatalog().findProjects(normalize(patterns)).collect(toCollection(TreeSet::new));
+    }
+
     void addDeps(Collection<Path> projects) {
-        var names = toNames(projects);
-        elph.getCatalog().getRequiredProjectPaths(names).forEach(projects::add);
+        elph.getCatalog().getRequiredProjectPaths(toNames(projects)).forEach(projects::add);
     }
 
     void addUsers(Collection<Path> projects) {
@@ -53,11 +65,5 @@ abstract class AbstractCommand {
         var leaves = elph.getCatalog().getLeavesOfSubset(projects, max);
         projects.removeAll(leaves);
         return leaves;
-    }
-
-    Set<Path> findProjects(Stream<String> patterns, boolean includeUsers) {
-        var result = elph.getCatalog().findProjects(patterns).collect(toCollection(TreeSet::new));
-        if (includeUsers) addUsers(result);
-        return result;
     }
 }

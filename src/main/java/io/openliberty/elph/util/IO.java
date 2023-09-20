@@ -6,8 +6,11 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.FileTime;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.Scanner;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -16,6 +19,9 @@ import static io.openliberty.elph.util.IO.Verbosity.INFO;
 import static io.openliberty.elph.util.IO.Verbosity.LOG;
 import static io.openliberty.elph.util.IO.Verbosity.OFF;
 import static java.util.function.Predicate.not;
+import static picocli.CommandLine.Help.Ansi.Style.bold;
+import static picocli.CommandLine.Help.Ansi.Style.faint;
+import static picocli.CommandLine.Help.Ansi.Style.reset;
 
 public class IO {
     public enum Verbosity {OFF, INFO, LOG, DEBUG}
@@ -24,6 +30,17 @@ public class IO {
     private static boolean quiet;
     /** Single scanner for the whole process */
     final static Scanner SCANNER = new Scanner(System.in);
+
+    public static FileTime getLastModified(Path file) {
+        if (Files.isRegularFile(file)) {
+            try {
+                return Files.getLastModifiedTime(file);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return FileTime.from(Instant.EPOCH);
+    }
 
     @Option(names = {"-q", "--quiet"}, description = "Suppress output.")
     private void setQuiet(boolean value) { quiet = value; }
@@ -41,26 +58,29 @@ public class IO {
     public boolean isEnabled(Verbosity v) { return !quiet && v.compareTo(verbosity) <= 0; }
 
     public Path chooseDirectory(String title, Path oldPath) {
-        reportf("=== %s ===", title);
         String oldVal = stringify(oldPath);
-        reportf("   was: %s", oldVal);
-        return inputf(Paths::get, "   new %s (blank to leave unchanged): ", title);
+        return inputf(Paths::get,
+                "%s%40s%s %s(%s)%s: ",
+                bold.on(), title, reset.on(),
+                faint.on(), oldVal, reset.on());
     }
+
+    public String input(String prompt) { return input(s -> s, prompt); }
+    public String inputf(String prompt, Object... inserts) { return input(s -> s, prompt.formatted(inserts)); }
 
     public <T> T input(Function<String, T> converter, String prompt) {
         System.out.print(prompt);
         return Optional.of(SCANNER.nextLine()).filter(not(String::isBlank)).map(converter).orElse(null);
     }
-    public <T> T inputf(Function<String, T> converter, String prompt, Object... inserts) { return input(converter, String.format(prompt, inserts)); }
+    public <T> T inputf(Function<String, T> converter, String prompt, Object... inserts) { return input(converter, prompt.formatted(inserts)); }
 
     public void reportDirectory(String title, Path oldPath, Path newPath) {
         if (null != newPath) {
-            reportf("=== %s ===", title);
-            reportf("   was: %s", stringify(oldPath));
-            reportf("    is: %s", stringify(newPath));
+            reportf("%s%40s:%s %s %s(was: %s)%s", bold.on(), title, reset.on(),
+                    stringify(newPath),
+                    faint.on(), stringify(oldPath), faint.off());
         } else {
-            reportf("=== %s ===", title);
-            reportf("        %s", stringify(oldPath));
+            reportf("%s%40s:%s %s", bold.on(), title, reset.on(), stringify(oldPath));
         }
     }
 
@@ -92,6 +112,23 @@ public class IO {
             return Files.createFile(file);
         } catch (IOException e) {
             throw error("Could not create " + desc + ": " + file);
+        }
+    }
+
+    public void writeFile(String desc, Path file, String contents) {
+        verifyOrCreateDir("Parent of " + desc, file.getParent());
+        try {
+            Files.writeString(file, contents);
+        } catch (IOException e) {
+            throw error("Could not write to " + desc + ": " + file, e);
+        }
+    }
+
+    public void readFile(String desc, Path file, Consumer<String> actionPerLine) {
+        try {
+            Files.readAllLines(file).forEach(actionPerLine);
+        } catch (IOException e) {
+            throw error("Could not read from " + desc + ": " + file, e);
         }
     }
 

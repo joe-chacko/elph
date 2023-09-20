@@ -1,14 +1,10 @@
 package io.openliberty.elph.cmd;
 
-import io.openliberty.elph.bnd.ProjectPaths;
-import io.openliberty.elph.util.IO;
 import picocli.CommandLine.Command;
 
 import java.util.TreeSet;
-import java.util.stream.Collectors;
 
 import static io.openliberty.elph.bnd.ProjectPaths.asNames;
-import static io.openliberty.elph.bnd.ProjectPaths.toNames;
 import static io.openliberty.elph.util.IO.Verbosity.DEBUG;
 import static io.openliberty.elph.util.IO.Verbosity.INFO;
 import static io.openliberty.elph.util.IO.Verbosity.LOG;

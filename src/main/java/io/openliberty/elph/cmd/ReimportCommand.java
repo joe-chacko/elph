@@ -9,6 +9,6 @@ class ReimportCommand extends AbstractImportCommand implements Runnable {
     @Override
     public void run() {
         var projects = getProjectsFromHistory();
-        importDepsInBatches(projects);
+        importDeps(projects);
     }
 }
