@@ -46,6 +46,7 @@ import static java.util.Comparator.comparing;
 import static java.util.Spliterator.ORDERED;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toCollection;
+import static java.util.stream.Collectors.toSet;
 import static java.util.stream.Collectors.toUnmodifiableSet;
 
 public class BndCatalog {
@@ -215,6 +216,14 @@ public class BndCatalog {
         var deps = getProjectAndDependencySubgraph(projectNames);
         var rDeps = new EdgeReversedGraph<>(deps);
         var topo = new TopologicalOrderIterator<>(rDeps, comparing(p -> p.name));
+        return stream(topo).map(p -> p.root);
+    }
+
+    public Stream<Path> reverseDependencyOrder(Stream<Path> paths) {
+        queryBnd();
+        var projects = paths.map(ProjectPaths::toName).map(nameIndex::get).collect(toSet());
+        var subGraph = new AsSubgraph<>(digraph, projects);
+        var topo = new TopologicalOrderIterator<>(subGraph, comparing(p -> p.name));
         return stream(topo).map(p -> p.root);
     }
 
