@@ -14,6 +14,8 @@ import java.util.stream.Stream;
 import static java.util.function.Predicate.not;
 
 public class AbstractHistoryCommand extends AbstractCommand {
+    private static final String HIST_FILE = "import.hist";
+    private static final String HIST_FILE_DESC = "import history file";
     protected boolean noHistory;
 
     void addToHistory(List<String> patterns, boolean includeUsers) {
@@ -27,7 +29,7 @@ public class AbstractHistoryCommand extends AbstractCommand {
         try {
             return Files.readAllLines(historyFile);
         } catch (IOException e) {
-            throw io.error("Could not open the " + ImportCommand.SETTINGS_LIST_FILE_DESC + " for reading: " + historyFile);
+            throw io.error("Could not open the " + HIST_FILE_DESC + " for reading: " + historyFile);
         }
     }
 
@@ -76,8 +78,8 @@ public class AbstractHistoryCommand extends AbstractCommand {
     }
 
     private Path getHistoryFile() {
-        String desc = ImportCommand.SETTINGS_LIST_FILE_DESC;
-        Path path = elph.getWorkspaceSettingsDir().resolve(ImportCommand.SETTINGS_LIST_FILE);
+        String desc = HIST_FILE_DESC;
+        Path path = elph.getWorkspaceSettingsDir().resolve(AbstractHistoryCommand.HIST_FILE);
         if (!Files.exists(path)) noHistory = true;
         return io.verifyOrCreateFile(desc, path);
     }

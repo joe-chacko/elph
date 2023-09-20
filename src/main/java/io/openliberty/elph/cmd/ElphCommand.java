@@ -34,6 +34,7 @@ import static java.util.stream.Collectors.toCollection;
         subcommands = {
                 HelpCommand.class,
                 SetupCommand.class,
+                AnalyzeCommand.class,
                 EclipseCommand.class,
                 ListCommand.class,
                 ImportCommand.class,
@@ -50,8 +51,6 @@ public class ElphCommand {
     private Path olRepo;
     private Path eclipseHome;
     private Path eclipseWorkspace;
-    @Option(names = "--finish-command", hidden = true)
-    private List<String> finishCommand;
     @Option(names = {"-h", "-?", "--help"}, usageHelp = true, hidden = true, description = "display this help message")
     private boolean usageHelpRequested;
     @Option(names = {"-n", "--dry-run"}, description = "Do not run commands - just print them.")
@@ -105,7 +104,7 @@ public class ElphCommand {
             Path bndWorkspace = getBndWorkspace();
             if (Files.isDirectory(bndWorkspace)) {
                 try {
-                    this.catalog = new BndCatalog(bndWorkspace, io);
+                    this.catalog = new BndCatalog(bndWorkspace, io, getWorkspaceSettingsDir());
                 } catch (IOException e) {
                     throw io.error("Could not inspect bnd workspace: " + bndWorkspace);
                 }
@@ -115,10 +114,6 @@ public class ElphCommand {
         }
         return this.catalog;
     }
-
-    private List<String> getFinishCommand() { return null != finishCommand ? finishCommand : defaultFinishCommand(); }
-    private List<String> defaultFinishCommand() {
-        return OS.is(MAC) ? asList("osascript", "-e", "tell app \"System Events\" to tell process \"Eclipse\" to click button \"Finish\" of window 1") : null; }
 
     void runExternal(List<String> cmd, String...extraArgs) {
         cmd.addAll(asList(extraArgs));
@@ -168,9 +163,6 @@ public class ElphCommand {
             ).map(Object::toString).collect(Collectors.toList());
         }
     }
-
-    void pressFinish() { if (isFinishCommandAvailable()) runExternal(getFinishCommand()); }
-    boolean isFinishCommandAvailable() { return null != getFinishCommand(); }
 
     Set<Path> getBndProjects() {
         return getCatalog().findProjects("*").collect(toCollection(TreeSet::new));

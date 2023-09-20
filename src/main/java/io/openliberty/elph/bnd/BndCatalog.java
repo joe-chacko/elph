@@ -27,6 +27,7 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.FileTime;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -43,24 +44,30 @@ import java.util.stream.StreamSupport;
 import static io.openliberty.elph.bnd.ProjectPaths.asNames;
 import static java.util.Comparator.comparing;
 import static java.util.Spliterator.ORDERED;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toUnmodifiableSet;
 
 public class BndCatalog {
+    private static final String SAVE_FILE = "deps.save";
+    public static final String SAVE_FILE_DESC = "dependency save file";
+
     private static<T> SimpleDirectedGraph<T, DefaultEdge> newGraph() {
         return new SimpleDirectedGraph<>(DefaultEdge.class);
     }
 
     final Path root;
     final IO io;
+    final Path saveFile;
     final SimpleDirectedGraph<BndProject, DefaultEdge> digraph = newGraph();
     final Map<String, BndProject> nameIndex = new TreeMap<>();
     final MultiValuedMap<Path, BndProject> pathIndex = new HashSetValuedHashMap<>();
     volatile boolean bndQueried;
 
-    public BndCatalog(Path bndWorkspace, IO io) throws IOException {
+    public BndCatalog(Path bndWorkspace, IO io, Path workspaceSettingsDir) throws IOException {
         this.io = io;
         this.root = bndWorkspace;
+        this.saveFile = workspaceSettingsDir.resolve(SAVE_FILE);
         // add the vertices
         try (var files = Files.list(bndWorkspace)) {
             files
@@ -93,15 +100,65 @@ public class BndCatalog {
         // make everything depend on 'cnf'
         var cnf = nameIndex.get("cnf");
         digraph.vertexSet().stream().filter(not(cnf::equals)).forEach(p -> digraph.addEdge(p, cnf));
+
+        // make some bundles depend on build.image
+        var buildImage = nameIndex.get("build.image");
+        digraph.vertexSet().stream()
+                .filter(not(p -> p.isNoBundle))
+                .filter(not(p -> p.publishWlpJarDisabled))
+                .forEach(p -> digraph.addEdge(p, buildImage));
+
+        // re-load deps if possible
+        loadDeps();
     }
 
-    void queryBnd() {
+    private void queryBnd() {
         if (bndQueried) return;
         synchronized (this) {
             if (bndQueried) return;
             var bnd = new BndWorkspace(io, root, nameIndex::get);
             digraph.vertexSet().forEach(p -> bnd.getBuildAndTestDependencies(p).forEach(q -> digraph.addEdge(p,q)));
+            var text = digraph.edgeSet()
+                    .stream()
+                    .map(this::formatEdge)
+                    .collect(joining("\n", "", "\n"));
+            io.writeFile(SAVE_FILE_DESC, saveFile, text);
         }
+    }
+
+    public void reanalyze() {
+        bndQueried = false;
+        queryBnd();
+    }
+
+    private String formatEdge(DefaultEdge e) {
+        return "%s -> %s".formatted(digraph.getEdgeSource(e), digraph.getEdgeTarget(e));
+    }
+
+    private void loadDeps() {
+        if (!Files.exists(saveFile)) return;
+        FileTime saveTime = IO.getLastModified(saveFile);
+        Predicate<BndProject> isNewer = p -> saveTime.compareTo(p.timestamp) < 0;
+        var newerCount = nameIndex.values()
+                .stream()
+                .filter(isNewer)
+                .peek(p -> io.debugf("bnd file for %s is newer than save file %s", p, saveFile))
+                .count();
+        io.logf("%d projects have bnd files newer than %s", newerCount, saveFile);
+        if (newerCount > 0) return;
+        io.readFile(SAVE_FILE_DESC, saveFile, this::loadDep);
+        bndQueried = true;
+    }
+
+    private void loadDep(String dep) {
+        String[] parts = dep.split(" -> ");
+        if (parts.length != 2) {
+            io.warn("Failed to parse dependency", dep);
+            return;
+        }
+        BndProject source = nameIndex.get(parts[0]);
+        BndProject target = nameIndex.get(parts[1]);
+        digraph.addEdge(source, target);
     }
 
     Path getProject(String name) { return find(name).root; }

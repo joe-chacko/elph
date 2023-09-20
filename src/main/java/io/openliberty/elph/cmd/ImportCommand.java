@@ -5,19 +5,12 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
-
-import static io.openliberty.elph.cmd.ElphCommand.TOOL_NAME;
 
 @Command(name = ImportCommand.SUBCOMMAND_NAME, description = "Add project and its dependencies to Eclipse. " +
         "It is recommended to have your terminal and your Eclipse window both visible at the same time. ")
 class ImportCommand extends AbstractImportCommand implements Runnable {
-    static final Path HOME_DIR = Paths.get(System.getProperty("user.home"));
     static final String SUBCOMMAND_NAME = "import";
-    static final String SETTINGS_LIST_FILE = SUBCOMMAND_NAME + ".hist";
-    static final String SETTINGS_LIST_FILE_DESC = TOOL_NAME + " " + SUBCOMMAND_NAME + " history file";
 
     static class Args {
         @Option(names = {"-j", "--just"}, required = true, description = "Import just the matching projects. Do NOT import any dependencies.")

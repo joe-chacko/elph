@@ -1,19 +1,17 @@
 package io.openliberty.elph.bnd;
 
-import picocli.CommandLine;
+import io.openliberty.elph.util.IO;
 
 import java.io.IOError;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.lang.String.join;
@@ -30,6 +28,8 @@ final class BndProject {
     final String symbolicName;
     final List<String> initialDeps;
     final FileTime timestamp;
+    final boolean isNoBundle;
+    final boolean publishWlpJarDisabled;
 
     BndProject(Path root) {
         this.root = root;
@@ -44,19 +44,10 @@ final class BndProject {
         deps.addAll(getPathProp(props, "-buildpath"));
         deps.addAll(getPathProp(props, "-testpath"));
         deps.remove("");
+        this.isNoBundle = props.containsKey("-nobundles");
+        this.publishWlpJarDisabled = "true".equals(props.getProperty("publish.wlp.jar.disabled"));
         this.initialDeps = unmodifiableList(deps);
-        this.timestamp = getModTime(root.resolve("bnd.bnd"));
-    }
-
-    private static FileTime getModTime(Path file) {
-        if (Files.isRegularFile(file)) {
-            try {
-                return Files.getLastModifiedTime(file);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-        return FileTime.from(Instant.EPOCH);
+        this.timestamp = IO.getLastModified(root.resolve("bnd.bnd"));
     }
 
     private static Properties getBndProps(Path root) {
@@ -79,8 +70,8 @@ final class BndProject {
     private static List<String> getPathProp(Properties props, String key) {
         String val = props.getProperty(key, "");
         return Stream.of(val.split(",\\s*"))
-                .map(s -> s.replaceFirst(";.*", ""))
-                .map(s -> s.replaceFirst("\\.\\./([^/]+)/.*", "$1"))
+                .map(s -> s.replaceFirst(";.*", "")) // chop off qualifiers
+                .map(s -> s.replaceFirst("\\.\\./([^/]+)/.*", "$1")) // parse relative dirs ../*/
                 .toList();
     }
 

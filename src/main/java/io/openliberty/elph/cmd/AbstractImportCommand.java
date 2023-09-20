@@ -8,11 +8,10 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import static io.openliberty.elph.bnd.ProjectPaths.toInlineString;
+import static picocli.CommandLine.Help.Ansi.Style.bold;
+import static picocli.CommandLine.Help.Ansi.Style.reset;
 
 class AbstractImportCommand extends AbstractHistoryCommand {
-    @Option(names = {"-n", "--no-finish"}, description = "Do not press the finish button.")
-    private boolean noFinish;
-
     private int maxBatchSize = Integer.MAX_VALUE;
     @Option(names = {"-m", "--max-batch-size"}, description = "Limit the maximum number of eclipse projects to import in a single batch.")
     private void setMaxBatchSize(int val) {
@@ -20,22 +19,24 @@ class AbstractImportCommand extends AbstractHistoryCommand {
         maxBatchSize = val;
     }
 
-    private boolean finishConfigured() { return elph.isFinishCommandAvailable() && !noFinish; }
-
     void importProject(Path path) {
         io.infof("Importing %s", path);
         // invoke eclipse
         elph.runExternal(elph.getEclipseCmd(path));
-        // optionally click finish
-        if (noHistory) return; // don't click finish on the first import
-        if (finishConfigured()) elph.pressFinish();
+        if (path.getFileName().toString().equals("cnf")) {
+            io.inputf("Ensure you have unchecked the following checkboxes:%n" +
+                            "  \u2022 %1$sSearch for nested projects%2$s%n" +
+                            "  \u2022 %1$sDetect and configure project natures%2$s%n" +
+                            "Press return to continue.",
+                    bold.on(), reset.on());
+        }
     }
 
     void importDepsInBatches(Set<Path> projects) { importDeps(projects, true); }
     void importDepsAllAtOnce(Set<Path> projects) { importDeps(projects, false); }
 
     private void importDeps(Set<Path> projects, boolean pauseBetweenBatches) {
-        Set<Path> imported, deps, removed, leaves;
+        Set<Path> deps, removed, leaves;
         deps = new TreeSet<>(projects);
         addDeps(deps);
         io.infof("%d related projects discovered.", deps.size());
@@ -57,7 +58,7 @@ class AbstractImportCommand extends AbstractHistoryCommand {
             depCount = deps.size();
             io.reportf("Importing batch of %d projects: %d remaining", leaves.size(), deps.size());
             // Import one project at a time if this tool is going to click finish
-            if (finishConfigured()) leaves.forEach(this::importProject);
+            if (false) leaves.forEach(this::importProject);
             // Otherwise open all the projects in as few commands as possible
             else elph.getBunchedEclipseCmds(leaves).forEach(elph::runExternal);
             if (deps.isEmpty()) break;
