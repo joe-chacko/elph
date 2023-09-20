@@ -30,7 +30,7 @@ import static java.util.stream.Collectors.toCollection;
         name = ElphCommand.TOOL_NAME,
         mixinStandardHelpOptions = true,
         description = "Eclipse Liberty Project Helper - helps to create a usable Eclipse workspace for Open Liberty development",
-        version = "Eclipse Liberty Project Helper v0.10",
+        version = "Eclipse Liberty Project Helper v1.0",
         subcommands = {
                 HelpCommand.class,
                 SetupCommand.class,
