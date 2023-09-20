@@ -13,8 +13,8 @@ import static picocli.CommandLine.Help.Ansi.Style.reset;
 
 class AbstractImportCommand extends AbstractHistoryCommand {
 
-    @Option(names = {"-b", "--batch"}, description = "Import in batches.")
-    boolean batching;
+    @Option(names = {"-f", "--force"}, description = "Do not import in batches. Use with caution.")
+    boolean force;
 
     private int maxBatchSize = Integer.MAX_VALUE;
     @Option(names = {"-m", "--max-batch-size"}, description = "Limit the maximum number of eclipse projects to import in a single batch.")
@@ -49,7 +49,22 @@ class AbstractImportCommand extends AbstractHistoryCommand {
         }
         io.report("Projects to be imported: " + deps.size());
         int depCount = deps.size();
-        if (batching) {
+        if (force) {
+            // if the list to be imported includes "cnf" then import that first to allow dialog configuration
+            deps.stream()
+                    .filter(p -> "cnf".equals(p.getFileName().toString()))
+                    .findFirst() // this terminal operation completes the stream's iteration through deps
+                    .ifPresent(cnf -> {
+                        importProject(cnf);
+                        deps.remove(cnf); // now the stream is done with, it is safe to remove from the set
+                    });
+
+            // invert the order of imports so that the very last dialog is the first dependency
+            var reversed = elph.getCatalog()
+                    .reverseDependencyOrder(deps.stream())
+                    .toList();
+            elph.getBunchedEclipseCmds(reversed).forEach(elph::runExternal);
+        } else {
             while (depCount > 0) {
                 leaves = removeLeaves(deps, maxBatchSize);
                 if (deps.size() == depCount) {
@@ -66,21 +81,6 @@ class AbstractImportCommand extends AbstractHistoryCommand {
                 if (deps.isEmpty()) break;
                 io.pause();
             }
-        } else {
-            // if the list to be imported includes "cnf" then import that first to allow dialog configuration
-            deps.stream()
-                    .filter(p -> "cnf".equals(p.getFileName().toString()))
-                    .findFirst() // this terminal operation completes the stream's iteration through deps
-                    .ifPresent(cnf -> {
-                        importProject(cnf);
-                        deps.remove(cnf); // now the stream is done with, it is safe to remove from the set
-                    });
-
-            // invert the order of imports so that the very last dialog is the first dependency
-            var reversed = elph.getCatalog()
-                    .reverseDependencyOrder(deps.stream())
-                    .toList();
-            elph.getBunchedEclipseCmds(reversed).forEach(elph::runExternal);
         }
     }
 }

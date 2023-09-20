@@ -21,6 +21,10 @@ abstract class AbstractCommand {
     @CommandLine.Mixin
     IO io;
 
+    Stream<String> normalize(Stream<String> patterns) {
+        return patterns.map(s -> s.replace('%', '*'));
+    }
+
     Set<Path> findProjects(Stream<String> patterns, boolean includeUsers) {
         Set<Path> result = findProjects(patterns);
         if (includeUsers) addUsers(result);
@@ -28,7 +32,7 @@ abstract class AbstractCommand {
     }
 
     Set<Path> findProjects(Stream<String> patterns) {
-        return elph.getCatalog().findProjects(patterns).collect(toCollection(TreeSet::new));
+        return elph.getCatalog().findProjects(normalize(patterns)).collect(toCollection(TreeSet::new));
     }
 
     void addDeps(Collection<Path> projects) {

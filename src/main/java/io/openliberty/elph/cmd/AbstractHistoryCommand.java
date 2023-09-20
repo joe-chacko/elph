@@ -66,10 +66,10 @@ public class AbstractHistoryCommand extends AbstractCommand {
     boolean deleteHistory(List<String> patterns) {
         var history = getHistoryList();
         var changes = new ArrayList<>(history);
-        // remove exact matches
-        history.removeAll(patterns);
-        // remove matches that match except for options (like "--users")
-        patterns.stream().map(s -> "--users " + s).forEach(history::remove);
+
+        normalize(patterns.stream())
+                .peek(history::remove) // remove exact matches
+                .map(s -> "--users " + s).forEach(history::remove); // remove matches with "--users"
         // compute the changes
         changes.removeAll(history);
         changes.forEach(h -> io.infof("Deleted: %s", h));
@@ -88,7 +88,7 @@ public class AbstractHistoryCommand extends AbstractCommand {
         // write this out to file
         Path settingsFile = getHistoryFile();
         try (FileWriter fw = new FileWriter(settingsFile.toFile()); PrintWriter pw = new PrintWriter(fw)) {
-            newNarrative.distinct().forEach(pw::println);
+            normalize(newNarrative).distinct().forEach(pw::println);
         } catch (IOException e) {
             throw io.error("Failed to open history for re-writing: " + settingsFile);
         }
