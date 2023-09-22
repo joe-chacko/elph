@@ -219,10 +219,10 @@ public class BndCatalog {
         return stream(topo).map(p -> p.root);
     }
 
-    public Stream<Path> reverseDependencyOrder(Stream<Path> paths) {
+    public Stream<Path> inTopologicalOrder(Stream<Path> paths) {
         queryBnd();
         var projects = paths.map(ProjectPaths::toName).map(nameIndex::get).collect(toSet());
-        var subGraph = new AsSubgraph<>(digraph, projects);
+        var subGraph = new EdgeReversedGraph<>(new AsSubgraph<>(digraph, projects));
         var topo = new TopologicalOrderIterator<>(subGraph, comparing(p -> p.name));
         return stream(topo).map(p -> p.root);
     }
