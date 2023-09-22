@@ -64,11 +64,11 @@ It will help when debugging Eclipse errors is to filter what you can see in the 
 
 Use `All Errors` when importing projects and just `Errors on Project` when fixing individual problems.
 
-## Import some projects
-- Run `elph import cnf` to import the vital first project that bndtools needs!
+## Importing projects
+Below are some useful pointers for importing projects with ELPH. As an example, try the following instructions to import the project `cnf`:
+- Run `elph import cnf` to import the project. This should open a window in eclipse.
     - Uncheck all checkboxes in the Import dialog
     - Check the "Hide already open projects" checkbox
-- Run `elph import build.image build.sharedResources` to import the next two initial projects.
-- Other projects to try importing early on:
-    - `com.ibm.ws.ras.instrument`
-    - `fattest.simplicity`
+- **TIP**: For fast importing, hold down the return button instead of clicking finish each time in Eclipse for each project.
+- Go back to your terminal and press return to continue.
+- If for some reason you exit the terminal process before importing all the dependent projects (e.g. using CTRL+C), run `elph reimport` to resume importing.
