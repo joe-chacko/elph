@@ -14,19 +14,20 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static io.openliberty.elph.util.IO.Verbosity.DEBUG;
 import static io.openliberty.elph.util.OS.MAC;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toCollection;
+import static java.util.stream.Stream.concat;
 
 @Command(
         name = ElphCommand.TOOL_NAME,
@@ -117,11 +118,21 @@ public class ElphCommand {
         return this.catalog;
     }
 
-    void runExternal(List<String> cmd, String...extraArgs) {
-        cmd.addAll(asList(extraArgs));
+    void runExternal(boolean blocking, List<String> cmd) {
         try {
-            if (dryRun) io.report(cmd.stream().collect(joining("' '", "'" , "'")));
-            new ProcessBuilder(cmd).inheritIO().start().waitFor();
+            if (dryRun) {
+                io.report(cmd.stream().collect(joining("' '", "'" , "'")));
+                return;
+            }
+            ProcessBuilder pb = new ProcessBuilder(cmd);
+            // output can be excessive e.g. when starting eclipse
+            // inheritIO means the child process ALWAYS prints to the console,
+            // even if the parent dies, so for non-blocking processes only do this when debug is enabled.
+            // For blocking processes, we must ensure the child's pipes are drained or the child process could hang.
+            // The simplest way to do this is to inherit IO.
+            if (blocking || io.isEnabled(DEBUG)) pb.inheritIO();
+            Process p = pb.start();
+            if (blocking) p.waitFor();
         } catch (IOException e) {
             io.error("Error invoking command " + cmd.stream().collect(joining("' '", "'", "'")) + e.getMessage());
         } catch (InterruptedException e) {
@@ -129,7 +140,7 @@ public class ElphCommand {
         }
     }
 
-    List<List<String>> getBunchedEclipseCmds(Collection<Path> paths) {
+    private List<List<String>> getBunchedEclipseCmds(Collection<Path> paths) {
         if (paths.isEmpty()) return emptyList();
         // Allow an arg list of total String length 4096.
         // Even Windows XP allows twice this length for the whole command.
@@ -152,19 +163,17 @@ public class ElphCommand {
         return cmds;
     }
 
-    List<String> getEclipseCmd(Path...args) {
-        if (OS.is(MAC)) {
-            return Stream.of(
-                    Stream.of("open", "-a", getEclipseHome()),
-                    Stream.of(args),
-                    Stream.of("--args", "-data", getEclipseWorkspace())
-            ).flatMap(s -> s).map(Object::toString).collect(Collectors.toList());
-        } else {
-            return Stream.concat(
-                    Stream.of(getEclipseHome().resolve("eclipse"), "-data", getEclipseWorkspace()),
-                    Stream.of(args)
-            ).map(Object::toString).collect(Collectors.toList());
-        }
+    private List<String> getEclipseCmd(Path... projects) {
+        return OS.current().getEclipseCmd(getEclipseHome(), getEclipseWorkspace(), projects);
+    }
+
+    void startEclipse() {
+        List<String> cmd = getEclipseCmd();
+        runExternal(false, cmd);
+    }
+
+    void importProjects(Collection<Path> projectPaths) {
+        getBunchedEclipseCmds(projectPaths).forEach(cmd -> runExternal(true, cmd));
     }
 
     Set<Path> getBndProjects() {
