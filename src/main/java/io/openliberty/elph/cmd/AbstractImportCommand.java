@@ -5,6 +5,7 @@ import picocli.CommandLine.TypeConversionException;
 
 import java.nio.file.Path;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -24,8 +25,7 @@ class AbstractImportCommand extends AbstractHistoryCommand {
 
     void importProject(Path path) {
         io.infof("Importing %s", path);
-        // invoke eclipse
-        elph.runExternal(elph.getEclipseCmd(path));
+        elph.importProjects(List.of(path));
         if (path.getFileName().toString().equals("cnf")) {
             io.inputf("Ensure you have unchecked the following checkboxes:%n" +
                             "  \u2022 %1$sSearch for nested projects%2$s%n" +
@@ -36,11 +36,10 @@ class AbstractImportCommand extends AbstractHistoryCommand {
     }
 
     void importDeps(Set<Path> projects) {
-        Set<Path> deps, removed, leaves;
-        deps = new TreeSet<>(projects);
+        Set<Path> deps = new TreeSet<>(projects);
         addDeps(deps);
         io.infof("%d related projects discovered.", deps.size());
-        removed = removeImported(deps);
+        Set<Path> removed = removeImported(deps);
         io.infof("%d related projects already imported.", removed.size());
         if (deps.isEmpty()) {
             io.report("Nothing left to import.");
@@ -58,9 +57,7 @@ class AbstractImportCommand extends AbstractHistoryCommand {
                     importProject(cnf);
                     deps.remove(cnf); // now the stream is done with, it is safe to remove from the set
                 });
-
         var stack = new LinkedList<Path>();
-
         elph.getCatalog().inTopologicalOrder(deps.stream()).forEach(p -> {
             if (stack.size() == maxBatchSize) {
                 stack.clear(); // we've just processed these, so clear them out
@@ -68,10 +65,9 @@ class AbstractImportCommand extends AbstractHistoryCommand {
             }
             stack.push(p);
             if (stack.size() < maxBatchSize) return;
-            elph.getBunchedEclipseCmds(stack).forEach(elph::runExternal);
+            elph.importProjects(stack);
         });
-
         // clear up any remainder
-        if (stack.size() != maxBatchSize) elph.getBunchedEclipseCmds(stack).forEach(elph::runExternal);
+        if (stack.size() != maxBatchSize) elph.importProjects(stack);
     }
 }
