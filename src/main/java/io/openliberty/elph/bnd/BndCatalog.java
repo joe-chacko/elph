@@ -65,10 +65,10 @@ public class BndCatalog {
     final MultiValuedMap<Path, BndProject> pathIndex = new HashSetValuedHashMap<>();
     volatile boolean bndQueried;
 
-    public BndCatalog(Path bndWorkspace, IO io, Path workspaceSettingsDir) throws IOException {
+    public BndCatalog(Path bndWorkspace, IO io, Path repoSettingsDir) throws IOException {
         this.io = io;
         this.root = bndWorkspace;
-        this.saveFile = workspaceSettingsDir.resolve(SAVE_FILE);
+        this.saveFile = repoSettingsDir.resolve(SAVE_FILE);
         // add the vertices
         try (var files = Files.list(bndWorkspace)) {
             files
