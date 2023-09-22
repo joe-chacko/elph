@@ -107,7 +107,7 @@ public class ElphCommand {
             Path bndWorkspace = getBndWorkspace();
             if (Files.isDirectory(bndWorkspace)) {
                 try {
-                    this.catalog = new BndCatalog(bndWorkspace, io, getWorkspaceSettingsDir());
+                    this.catalog = new BndCatalog(bndWorkspace, io, getRepoSettingsDir());
                 } catch (IOException e) {
                     throw io.error("Could not inspect bnd workspace: " + bndWorkspace);
                 }
@@ -203,6 +203,16 @@ public class ElphCommand {
 
     Path getWorkspaceSettingsDir() {
         return io.verifyOrCreateDir(TOOL_NAME + " workspace settings directory", getEclipseWorkspace().resolve("." + TOOL_NAME));
+    }
+
+    Path getRepoSettingsDir() {
+        Path dir = getOpenLibertyRepo().resolve("." + TOOL_NAME);
+        if (!Files.isDirectory(dir)) {
+            io.verifyOrCreateDir(TOOL_NAME + " git repository settings directory", dir);
+            // make sure the entire contents of the directory are ignored, including the .gitignore
+            io.writeFile(".elph git ignore file", dir.resolve(".gitignore"), "*");
+        }
+        return dir;
     }
 
     private Path getEclipseDotProjectsDir() { return io.verifyDir(".projects dir", getEclipseWorkspace().resolve(DOT_PROJECTS)); }
