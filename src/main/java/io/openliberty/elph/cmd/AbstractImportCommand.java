@@ -4,22 +4,21 @@ import picocli.CommandLine.Option;
 import picocli.CommandLine.TypeConversionException;
 
 import java.nio.file.Path;
+import java.util.LinkedList;
 import java.util.Set;
 import java.util.TreeSet;
 
-import static io.openliberty.elph.bnd.ProjectPaths.toInlineString;
 import static picocli.CommandLine.Help.Ansi.Style.bold;
 import static picocli.CommandLine.Help.Ansi.Style.reset;
 
 class AbstractImportCommand extends AbstractHistoryCommand {
 
-    @Option(names = {"-f", "--force"}, description = "Do not import in batches. Use with caution.")
-    boolean force;
-
     private int maxBatchSize = Integer.MAX_VALUE;
-    @Option(names = {"-m", "--max-batch-size"}, description = "Limit the maximum number of eclipse projects to import in a single batch.")
+
+    @Option(names = {"-b", "--batch-size"}, defaultValue = "20", description = "Limit the maximum number of eclipse projects to import in a single batch.")
     private void setMaxBatchSize(int val) {
         if (val <= 0) throw new TypeConversionException("Cannot set batch size lower than 1");
+        if (val > 100) io.warn("Ambitious batch size setting: " + val);
         maxBatchSize = val;
     }
 
@@ -49,38 +48,30 @@ class AbstractImportCommand extends AbstractHistoryCommand {
         }
         io.report("Projects to be imported: " + deps.size());
         int depCount = deps.size();
-        if (force) {
-            // if the list to be imported includes "cnf" then import that first to allow dialog configuration
-            deps.stream()
-                    .filter(p -> "cnf".equals(p.getFileName().toString()))
-                    .findFirst() // this terminal operation completes the stream's iteration through deps
-                    .ifPresent(cnf -> {
-                        importProject(cnf);
-                        deps.remove(cnf); // now the stream is done with, it is safe to remove from the set
-                    });
 
-            // invert the order of imports so that the very last dialog is the first dependency
-            var reversed = elph.getCatalog()
-                    .reverseDependencyOrder(deps.stream())
-                    .toList();
-            elph.getBunchedEclipseCmds(reversed).forEach(elph::runExternal);
-        } else {
-            while (depCount > 0) {
-                leaves = removeLeaves(deps, maxBatchSize);
-                if (deps.size() == depCount) {
-                    throw io.error("Project import seems to be stuck in a loop - Open Liberty or this tool needs fixing",
-                            "leaves = " + toInlineString(leaves),
-                            "deps = " + toInlineString(deps));
-                }
-                depCount = deps.size();
-                io.reportf("Importing batch of %d projects: %d remaining", leaves.size(), deps.size());
-                // Import one project at a time if this tool is going to click finish
-                if (false) leaves.forEach(this::importProject);
-                    // Otherwise open all the projects in as few commands as possible
-                else elph.getBunchedEclipseCmds(leaves).forEach(elph::runExternal);
-                if (deps.isEmpty()) break;
-                io.pause();
+
+        // if the list to be imported includes "cnf" then import that first to allow dialog configuration
+        deps.stream()
+                .filter(p -> "cnf".equals(p.getFileName().toString()))
+                .findFirst() // this terminal operation completes the stream's iteration through deps
+                .ifPresent(cnf -> {
+                    importProject(cnf);
+                    deps.remove(cnf); // now the stream is done with, it is safe to remove from the set
+                });
+
+        var stack = new LinkedList<Path>();
+
+        elph.getCatalog().inTopologicalOrder(deps.stream()).forEach(p -> {
+            if (stack.size() == maxBatchSize) {
+                stack.clear(); // we've just processed these, so clear them out
+                io.pause(); // there is at least one more project to import, so pause
             }
-        }
+            stack.push(p);
+            if (stack.size() < maxBatchSize) return;
+            elph.getBunchedEclipseCmds(stack).forEach(elph::runExternal);
+        });
+
+        // clear up any remainder
+        if (stack.size() != maxBatchSize) elph.getBunchedEclipseCmds(stack).forEach(elph::runExternal);
     }
 }

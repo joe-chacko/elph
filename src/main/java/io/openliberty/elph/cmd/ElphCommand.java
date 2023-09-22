@@ -14,6 +14,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
@@ -22,6 +23,7 @@ import java.util.stream.Stream;
 
 import static io.openliberty.elph.util.OS.MAC;
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toCollection;
@@ -128,6 +130,7 @@ public class ElphCommand {
     }
 
     List<List<String>> getBunchedEclipseCmds(Collection<Path> paths) {
+        if (paths.isEmpty()) return emptyList();
         // Allow an arg list of total String length 4096.
         // Even Windows XP allows twice this length for the whole command.
         // So we should still be safe even after adding the rest of the Eclipse command line.
