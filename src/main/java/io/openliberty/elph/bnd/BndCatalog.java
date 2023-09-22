@@ -118,7 +118,10 @@ public class BndCatalog {
         synchronized (this) {
             if (bndQueried) return;
             var bnd = new BndWorkspace(io, root, nameIndex::get);
-            digraph.vertexSet().forEach(p -> bnd.getBuildAndTestDependencies(p).forEach(q -> digraph.addEdge(p,q)));
+            digraph.vertexSet().forEach(p -> bnd
+                    .getBuildAndTestDependencies(p)
+                    .filter(not(p::equals))
+                    .forEach(q -> digraph.addEdge(p,q)));
             var text = digraph.edgeSet()
                     .stream()
                     .map(this::formatEdge)
