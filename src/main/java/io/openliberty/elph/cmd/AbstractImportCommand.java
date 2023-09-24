@@ -64,21 +64,26 @@ class AbstractImportCommand extends AbstractHistoryCommand {
     }
 
     private void displayGeneralInstructions() {
-        io.banner("This command opens import dialogs in Eclipse.",
-                "Deal with these in Eclipse as follows:",
-                bold.on() + " \u2022 either hold down ENTER (\u23CE) to import all the projects,",
-                bold.on() + " \u2022 or hold down ESCAPE (\u241B) to cancel all the imports.",
-                "Wait for Eclipse to finish building.",
-                "Ensure there are no errors in Eclipse's Markers view pane.",
-                "Finally, return to the " + TOOL_NAME + " window to continue.");
+        io.banner(
+                "*******************************************************************************",
+                "This command opens import dialogs in Eclipse.                                  ",
+                "Deal with these in Eclipse as follows:                                         ",
+                bold.on() + " \u2022 either hold down ENTER (\u23CE) to import all the projects,                      ",
+                bold.on() + " \u2022 or hold down ESCAPE (\u241B) to cancel all the imports.                          ",
+                "Wait for Eclipse to finish building.                                           ",
+                "Ensure there are no errors in Eclipse's Markers view pane.                     ",
+                "Finally, return to the " + TOOL_NAME + " window to continue.                                ",
+                "*******************************************************************************");
     }
 
     private void displayFirstDialogInstructions() {
-        io.banner("If this is the first import into an Eclipse workspace:",
-                bold.on() + " \u2022 \uD83D\uDD32 Uncheck \"Search for nested projects\"",
-                bold.on() + " \u2022 \uD83D\uDD32 Uncheck \"Detect and configure project natures\"",
-                "Then click \"Finish\" before returning to " + TOOL_NAME + "."
-        );
+        io.banner(
+                "*******************************************************************************",
+                "If this is the first import into an Eclipse workspace:                         ",
+                bold.on() + " \u2022 \uD83D\uDD32 Uncheck \"Search for nested projects\"                                     ",
+                bold.on() + " \u2022 \uD83D\uDD32 Uncheck \"Detect and configure project natures\"                           ",
+                "Then click \"Finish\" before returning to " + TOOL_NAME + ".                                  ",
+                "*******************************************************************************");
     }
 
     private void importProjects(LinkedList<Path> stack) {
