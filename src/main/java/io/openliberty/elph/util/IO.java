@@ -19,8 +19,14 @@ import static io.openliberty.elph.util.IO.Verbosity.INFO;
 import static io.openliberty.elph.util.IO.Verbosity.LOG;
 import static io.openliberty.elph.util.IO.Verbosity.OFF;
 import static java.util.function.Predicate.not;
+import static picocli.CommandLine.Help.Ansi.Style.bg_blue;
+import static picocli.CommandLine.Help.Ansi.Style.bg_red;
+import static picocli.CommandLine.Help.Ansi.Style.bg_yellow;
+import static picocli.CommandLine.Help.Ansi.Style.blink;
 import static picocli.CommandLine.Help.Ansi.Style.bold;
 import static picocli.CommandLine.Help.Ansi.Style.faint;
+import static picocli.CommandLine.Help.Ansi.Style.fg_black;
+import static picocli.CommandLine.Help.Ansi.Style.fg_white;
 import static picocli.CommandLine.Help.Ansi.Style.reset;
 
 public class IO {
@@ -85,14 +91,14 @@ public class IO {
     }
 
     public Error error(String message, Object... details) {
-        System.err.println("ERROR: " + message);
+        System.err.println(blink.on() + bg_red.on() + fg_black.on() + bold.on() + "ERROR: " + message + reset.on());
         for (Object detail: details) System.err.println(detail);
         System.exit(1);
         throw new Error();
     }
 
     public void warn(String message, Object... details) {
-        System.err.println("WARNING: " + message);
+        System.err.println(blink.on() + bg_yellow.on() + fg_black.on() + bold.on() + "WARNING: " + message + reset.on());
         for (Object detail : details) System.err.println(detail);
     }
 
@@ -104,7 +110,11 @@ public class IO {
     public void debugf(String msg, Object...inserts) { if (isEnabled(DEBUG)) System.out.printf((msg) + "%n", inserts); }
     public void report(Object msg) { if (!quiet) System.out.println(msg); }
     public void reportf(String msg, Object... inserts) { if (!quiet) System.out.printf((msg) + "%n", inserts); }
-
+    public void banner(String... lines) {
+        reportf(bg_blue.on() + fg_white.on() + "==> " + reset.on());
+        for (String line: lines) reportf(bg_blue.on() + fg_white.on() + "==> " + line + reset.on());
+        reportf(bg_blue.on() + fg_white.on() + "==> " + reset.on());
+    }
     public Path verifyOrCreateFile(String desc, Path file) {
         verifyOrCreateDir("Parent of " + desc, file.getParent());
         if (Files.exists(file) && !Files.isDirectory(file) && Files.isWritable(file)) return file;
@@ -134,7 +144,7 @@ public class IO {
 
     public Path verifyOrCreateDir(String desc, Path dir) {
         if (Files.isDirectory(dir)) return dir;
-        if (Files.exists(dir)) throw error("Could not overwrite " + desc + " as directory: " + dir);
+        if (Files.exists(dir)) throw error("Expected directory but found file for " + desc + ": " + dir);
         try {
             return Files.createDirectory(dir);
         } catch (IOException e) {
@@ -149,7 +159,7 @@ public class IO {
 
     public void pause() {
         if (quiet) return;
-        report("Press return to continue");
+        report("Press return to continue, or control-C to quit.");
         new Scanner(System.in).nextLine();
     }
 
