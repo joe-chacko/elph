@@ -3,7 +3,6 @@ package io.openliberty.elph.cmd;
 import io.openliberty.elph.bnd.BndCatalog;
 import io.openliberty.elph.util.IO;
 import io.openliberty.elph.util.OS;
-import picocli.AutoComplete;
 import picocli.AutoComplete.GenerateCompletion;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.HelpCommand;
