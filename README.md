@@ -23,26 +23,19 @@
         git clone git@github.com:joe-chacko/elph.git
 - Add the path to your cloned repo of ELPH to your PATH environment variable so that your command line knows where to find the executable.
 
-  - In an editor of your choice add the following line to your `~/.bashrc` or `~/.zshrc` depending on if you are using bash or z shell:
-
-            export PATH=<path-to-elph-dir>:$PATH
+  - In an editor of your choice add the following lines to your `~/.bashrc` or `~/.zshrc` depending on if you are using bash or z shell:
+    ```bash
+    # Add the elph home directory to the PATH
+    export PATH=/path/to/elph/dir:$PATH
+    ```
   - Run the following command to immediately apply the changes to your PATH environment variable:
-
-    - Bash Shell
-
-            source ~/.bashrc
-
-    - Z Shell
-
-            source ~/.zshrc
-
-- Try running elph to see if it builds properly
-
-        elph help
+    - Bash Shell: `source ~/.bashrc`
+    - Z Shell: `source ~/.zshrc`
 
 
 ## Running ELPH
 - Invoke `elph help` &mdash; this will build the tool and give a description of each of ELPH's commands.
+- Optionally invoke `source <(elph generate-completion)` to enable tab completion in your current Bash or Zsh shell.
 - Invoke `elph setup -i` &mdash; this will configure it interactively. Run it again without the `-i` to display (and validate) the config.
 - Invoke `elph analyze` &mdash; this will take a little while (under 1 minute) to query bnd about your workspace. 
 - Invoke `elph list '*yoko*'` &mdash; this will list all the known projects that contain 'yoko' in the title.
