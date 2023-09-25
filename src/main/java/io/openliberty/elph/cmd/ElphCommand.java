@@ -3,6 +3,8 @@ package io.openliberty.elph.cmd;
 import io.openliberty.elph.bnd.BndCatalog;
 import io.openliberty.elph.util.IO;
 import io.openliberty.elph.util.OS;
+import picocli.AutoComplete;
+import picocli.AutoComplete.GenerateCompletion;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.HelpCommand;
 import picocli.CommandLine.Mixin;
@@ -17,17 +19,13 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static io.openliberty.elph.util.IO.Verbosity.DEBUG;
 import static io.openliberty.elph.util.OS.MAC;
-import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toCollection;
-import static java.util.stream.Stream.concat;
 
 @Command(
         name = ElphCommand.TOOL_NAME,
@@ -35,6 +33,7 @@ import static java.util.stream.Stream.concat;
         description = "Eclipse Liberty Project Helper - helps to create a usable Eclipse workspace for Open Liberty development",
         version = "Eclipse Liberty Project Helper v1.0",
         subcommands = {
+                GenerateCompletion.class,
                 HelpCommand.class,
                 SetupCommand.class,
                 AnalyzeCommand.class,
