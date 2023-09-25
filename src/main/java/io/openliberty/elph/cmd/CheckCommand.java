@@ -14,7 +14,7 @@ import static java.util.stream.Collectors.toSet;
 @Command(name = "check", description = "Check the Eclipse workspace for issues. Increase verbosity to see more detail.")
 class CheckCommand extends AbstractHistoryCommand implements Runnable {
     private static final String GOOD = "\u2705 ";
-    private static final String BAD = "\u2049\ufe0f ";
+    private static final String BAD = "\u2753 ";
     @Override
     public void run() {
         var bndProjects = elph.getBndProjects();
