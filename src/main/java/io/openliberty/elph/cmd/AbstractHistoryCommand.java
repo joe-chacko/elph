@@ -16,7 +16,15 @@ import static java.util.function.Predicate.not;
 public class AbstractHistoryCommand extends AbstractCommand {
     private static final String HIST_FILE = "import.hist";
     private static final String HIST_FILE_DESC = "import history file";
-    protected boolean noHistory;
+    private Boolean noHistory;
+
+    boolean noImportHistory() {
+        if (null == noHistory) {
+            Path path = elph.getWorkspaceSettingsDir().resolve(AbstractHistoryCommand.HIST_FILE);
+            noHistory = ! Files.exists(path);
+        }
+        return noHistory;
+    }
 
     void addToHistory(List<String> patterns, boolean includeUsers) {
         rewriteHistory(Stream.concat(
@@ -78,10 +86,9 @@ public class AbstractHistoryCommand extends AbstractCommand {
     }
 
     private Path getHistoryFile() {
-        String desc = HIST_FILE_DESC;
         Path path = elph.getWorkspaceSettingsDir().resolve(AbstractHistoryCommand.HIST_FILE);
         if (!Files.exists(path)) noHistory = true;
-        return io.verifyOrCreateFile(desc, path);
+        return io.verifyOrCreateFile(HIST_FILE_DESC, path);
     }
 
     private void rewriteHistory(Stream<String> newNarrative) {

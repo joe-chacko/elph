@@ -11,7 +11,6 @@ import java.util.TreeSet;
 
 import static io.openliberty.elph.cmd.ElphCommand.TOOL_NAME;
 import static io.openliberty.elph.util.IO.Verbosity.INFO;
-import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toCollection;
 import static picocli.CommandLine.Help.Ansi.Style.bold;
 
@@ -37,22 +36,29 @@ class AbstractImportCommand extends AbstractHistoryCommand {
             return;
         }
 
-        displayGeneralInstructions();
-
         io.report("Projects to be imported: " + deps.size());
-
         var queue = elph.getCatalog().inTopologicalOrder(deps.stream()).collect(toCollection(LinkedList::new));
         final int total = queue.size();
         var stack = new LinkedList<Path>();
+
+
+        boolean firstInstructionsNeeded = noImportHistory();
+        boolean instructionsNeeded = true;
+
         for (Path p = queue.poll(); null != p; p = queue.poll()) {
             stack.push(p);
-            boolean firstProject = p.getFileName().toString().equals("cnf");
             boolean batchComplete = stack.size() == maxBatchSize;
             boolean lastBatch = queue.isEmpty();
             // import the first project "cnf" on its own, with extra instructions
             // otherwise import in batches, allowing for an under-sized final batch
-            if (!(firstProject || batchComplete || lastBatch)) continue;
-            if (firstProject) displayFirstDialogInstructions();
+            if (!(firstInstructionsNeeded || batchComplete || lastBatch)) continue;
+            if (firstInstructionsNeeded) {
+                displayFirstDialogInstructions();
+                firstInstructionsNeeded = false;
+            } else if (instructionsNeeded) {
+                displayGeneralInstructions();
+                instructionsNeeded = false;
+            }
             if (stack.size() == 1) io.reportf("Importing project %d of %d", total - queue.size(), total);
             else io.reportf("Importing projects %d..%d of %d", 1 + total - queue.size() - stack.size(), total - queue.size(), total);
             importProjects(stack);
@@ -65,25 +71,25 @@ class AbstractImportCommand extends AbstractHistoryCommand {
 
     private void displayGeneralInstructions() {
         io.banner(
-                "*******************************************************************************",
-                "This command opens import dialogs in Eclipse.                                  ",
-                "Deal with these in Eclipse as follows:                                         ",
-                bold.on() + " \u2022 either hold down ENTER (\u23CE) to import all the projects,                      ",
-                bold.on() + " \u2022 or hold down ESCAPE (\u241B) to cancel all the imports.                          ",
-                "Wait for Eclipse to finish building.                                           ",
-                "Ensure there are no errors in Eclipse's Markers view pane.                     ",
-                "Finally, return to the " + TOOL_NAME + " window to continue.                                ",
-                "*******************************************************************************");
+                "Several import dialogs are about to open in Eclipse.",
+                " - Deal with these in Eclipse as follows:",
+                bold.on() + "   - EITHER import all the projects (hold down ENTER)",
+                bold.on() + "   - OR import some/none of the projects and cancel the rest",
+                " - Wait for Eclipse to finish building.",
+                " - Ensure there are no errors in Eclipse's Markers view pane.",
+                " - Finally, return to the " + TOOL_NAME + " window to continue.");
     }
 
     private void displayFirstDialogInstructions() {
         io.banner(
-                "*******************************************************************************",
-                "If this is the first import into an Eclipse workspace:                         ",
-                bold.on() + " \u2022 \uD83D\uDD32 Uncheck \"Search for nested projects\"                                     ",
-                bold.on() + " \u2022 \uD83D\uDD32 Uncheck \"Detect and configure project natures\"                           ",
-                "Then click \"Finish\" before returning to " + TOOL_NAME + ".                                  ",
-                "*******************************************************************************");
+                "This looks like the first import into this Eclipse workspace.",
+                "Just a single project will be imported.",
+                "Follow these steps to configure the import dialog:",
+                bold.on() + " [ ] Uncheck \"CLose newly imported projects upon deletion\"",
+                bold.on() + " [ ] Uncheck \"Search for nested projects\"",
+                bold.on() + " [ ] Uncheck \"Detect and configure project natures\"",
+                bold.on() + " [*] Check \"Hide already open projects\"");
+        io.pause();
     }
 
     private void importProjects(LinkedList<Path> stack) {

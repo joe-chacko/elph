@@ -13,6 +13,7 @@ import java.util.Scanner;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import static io.openliberty.elph.util.IO.Verbosity.DEBUG;
 import static io.openliberty.elph.util.IO.Verbosity.INFO;
@@ -110,11 +111,33 @@ public class IO {
     public void debugf(String msg, Object...inserts) { if (isEnabled(DEBUG)) System.out.printf((msg) + "%n", inserts); }
     public void report(Object msg) { if (!quiet) System.out.println(msg); }
     public void reportf(String msg, Object... inserts) { if (!quiet) System.out.printf((msg) + "%n", inserts); }
+
     public void banner(String... lines) {
-        reportf(bg_blue.on() + fg_white.on() + "==> " + reset.on());
-        for (String line: lines) reportf(bg_blue.on() + fg_white.on() + "==> " + line + reset.on());
-        reportf(bg_blue.on() + fg_white.on() + "==> " + reset.on());
+        var opt = Stream.of(lines)
+                .mapToInt(this::asciiLen)
+                .max();
+        if (opt.isEmpty()) return;
+        int effectiveWidth = opt.getAsInt();
+        final String prefix = "\t" + bg_blue.on() + fg_white.on() + "  ";
+        final String suffix = reset.on() + bg_blue.on() + fg_white.on() + "    " + reset.on();
+        final String spacer = prefix + ("%" + (effectiveWidth) + "s").formatted("") + suffix;
+        final String metaFormat = prefix + "%%-%ds" + suffix;
+        Stream.of(
+                Stream.of(spacer),
+                Stream.of(lines).map(line -> metaFormat.formatted(fudgedWidth(effectiveWidth, line)).formatted(line)),
+                Stream.of(spacer)
+        ).flatMap(i -> i).forEach(this::reportf);
     }
+
+    private int fudgedWidth(int effectiveWidth, String line) {
+        return effectiveWidth + line.length() - asciiLen(line);
+    }
+
+    private int asciiLen(String s) {
+        String p = s.replaceAll("\033\\[[0-9;]*[A-Za-z]", "");
+        return p.length();
+    }
+
     public Path verifyOrCreateFile(String desc, Path file) {
         verifyOrCreateDir("Parent of " + desc, file.getParent());
         if (Files.exists(file) && !Files.isDirectory(file) && Files.isWritable(file)) return file;
