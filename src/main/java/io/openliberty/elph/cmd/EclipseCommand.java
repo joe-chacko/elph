@@ -8,6 +8,6 @@ import static io.openliberty.elph.cmd.ElphCommand.TOOL_NAME;
 class EclipseCommand extends AbstractCommand implements Runnable {
     @Override
     public void run() {
-        elph.runExternal(elph.getEclipseCmd());
+        elph.startEclipse();
     }
 }

@@ -13,6 +13,7 @@
 package io.openliberty.elph.bnd;
 
 import io.openliberty.elph.util.IO;
+import me.tongfei.progressbar.ProgressBar;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.jgrapht.Graph;
@@ -65,10 +66,10 @@ public class BndCatalog {
     final MultiValuedMap<Path, BndProject> pathIndex = new HashSetValuedHashMap<>();
     volatile boolean bndQueried;
 
-    public BndCatalog(Path bndWorkspace, IO io, Path workspaceSettingsDir) throws IOException {
+    public BndCatalog(Path bndWorkspace, IO io, Path repoSettingsDir) throws IOException {
         this.io = io;
         this.root = bndWorkspace;
-        this.saveFile = workspaceSettingsDir.resolve(SAVE_FILE);
+        this.saveFile = repoSettingsDir.resolve(SAVE_FILE);
         // add the vertices
         try (var files = Files.list(bndWorkspace)) {
             files
@@ -113,15 +114,17 @@ public class BndCatalog {
         loadDeps();
     }
 
-    private void queryBnd() {
+    private void analyzeDependenciesUsingBnd() {
         if (bndQueried) return;
         synchronized (this) {
             if (bndQueried) return;
             var bnd = new BndWorkspace(io, root, nameIndex::get);
-            digraph.vertexSet().forEach(p -> bnd
+            Set<BndProject> bndProjects = digraph.vertexSet();
+            for(BndProject p: ProgressBar.wrap(bndProjects, "Analyzing dependencies using bnd")) bnd
                     .getBuildAndTestDependencies(p)
                     .filter(not(p::equals))
-                    .forEach(q -> digraph.addEdge(p,q)));
+                    .forEach(q -> digraph.addEdge(p,q));
+
             var text = digraph.edgeSet()
                     .stream()
                     .map(this::formatEdge)
@@ -132,7 +135,7 @@ public class BndCatalog {
 
     public void reanalyze() {
         bndQueried = false;
-        queryBnd();
+        analyzeDependenciesUsingBnd();
     }
 
     private String formatEdge(DefaultEdge e) {
@@ -200,7 +203,7 @@ public class BndCatalog {
     }
 
     public Set<Path> getLeavesOfSubset(Collection<Path> subset, int max) {
-        queryBnd();
+        analyzeDependenciesUsingBnd();
         assert max > 0;
         var nodes = asNames(subset).map(this::find).collect(toUnmodifiableSet());
         var subGraph = new AsSubgraph<>(digraph, nodes);
@@ -215,7 +218,7 @@ public class BndCatalog {
     }
 
     public Stream<Path> getRequiredProjectPaths(Collection<String> projectNames) {
-        queryBnd();
+        analyzeDependenciesUsingBnd();
         var deps = getProjectAndDependencySubgraph(projectNames);
         var rDeps = new EdgeReversedGraph<>(deps);
         var topo = new TopologicalOrderIterator<>(rDeps, comparing(p -> p.name));
@@ -223,7 +226,7 @@ public class BndCatalog {
     }
 
     public Stream<Path> inTopologicalOrder(Stream<Path> paths) {
-        queryBnd();
+        analyzeDependenciesUsingBnd();
         var projects = paths.map(ProjectPaths::toName).map(nameIndex::get).collect(toSet());
         var subGraph = new EdgeReversedGraph<>(new AsSubgraph<>(digraph, projects));
         var topo = new TopologicalOrderIterator<>(subGraph, comparing(p -> p.name));
@@ -231,7 +234,7 @@ public class BndCatalog {
     }
 
     public Stream<Path> getDependentProjectPaths(Collection<String> projectNames) {
-        queryBnd();
+        analyzeDependenciesUsingBnd();
         return projectNames.stream()
                 .map(this::find)
                 .map(digraph::incomingEdgesOf)
@@ -242,7 +245,7 @@ public class BndCatalog {
     }
 
     Graph<BndProject, ?> getProjectAndDependencySubgraph(Collection<String> projectNames) {
-        queryBnd();
+        analyzeDependenciesUsingBnd();
         // collect the named projects to start with
         var projects = projectNames.stream()
                 .map(this::find)

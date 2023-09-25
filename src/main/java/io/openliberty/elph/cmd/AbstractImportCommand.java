@@ -5,9 +5,14 @@ import picocli.CommandLine.TypeConversionException;
 
 import java.nio.file.Path;
 import java.util.LinkedList;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 
+import static io.openliberty.elph.cmd.ElphCommand.TOOL_NAME;
+import static io.openliberty.elph.util.IO.Verbosity.INFO;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toCollection;
 import static picocli.CommandLine.Help.Ansi.Style.bold;
 import static picocli.CommandLine.Help.Ansi.Style.italic;
 import static picocli.CommandLine.Help.Ansi.Style.reset;
@@ -23,57 +28,87 @@ class AbstractImportCommand extends AbstractHistoryCommand {
         maxBatchSize = val;
     }
 
-    void importProject(Path path) {
-        io.infof("Importing %s", path);
-        // invoke eclipse
-        elph.runExternal(elph.getEclipseCmd(path));
-        if (path.getFileName().toString().equals("cnf")) {
-            io.inputf("Ensure you have unchecked the following checkboxes:%n" +
-                            "  \u2022 %1$sSearch for nested projects%2$s%n" +
-                            "  \u2022 %1$sDetect and configure project natures%2$s%n" +
-                            "Press return to continue.",
-                    bold.on(), reset.on());
-        }
-    }
-
     void importDeps(Set<Path> projects) {
-        Set<Path> deps, removed, leaves;
-        deps = new TreeSet<>(projects);
+        Set<Path> deps = new TreeSet<>(projects);
         addDeps(deps);
         io.infof("%d related projects discovered.", deps.size());
-        removed = removeImported(deps);
+        Set<Path> removed = removeImported(deps);
         io.infof("%d related projects already imported.", removed.size());
         if (deps.isEmpty()) {
             io.report("Nothing left to import.");
             return;
         }
+
+        displayGeneralInstructions();
+
         io.report("Projects to be imported: " + deps.size());
-        int depCount = deps.size();
 
-
-        // if the list to be imported includes "cnf" then import that first to allow dialog configuration
-        deps.stream()
-                .filter(p -> "cnf".equals(p.getFileName().toString()))
-                .findFirst() // this terminal operation completes the stream's iteration through deps
-                .ifPresent(cnf -> {
-                    importProject(cnf);
-                    deps.remove(cnf); // now the stream is done with, it is safe to remove from the set
-                });
-
+        var queue = elph.getCatalog().inTopologicalOrder(deps.stream()).collect(toCollection(LinkedList::new));
+        final int total = queue.size();
         var stack = new LinkedList<Path>();
-
-        elph.getCatalog().inTopologicalOrder(deps.stream()).forEach(p -> {
-            if (stack.size() == maxBatchSize) {
-                stack.clear(); // we've just processed these, so clear them out
-                io.pause(); // there is at least one more project to import, so pause
-            }
+        for (Path p = queue.poll(); null != p; p = queue.poll()) {
             stack.push(p);
-            if (stack.size() < maxBatchSize) return;
-            elph.getBunchedEclipseCmds(stack).forEach(elph::runExternal);
-        });
+            boolean firstProject = p.getFileName().toString().equals("cnf");
+            boolean batchComplete = stack.size() == maxBatchSize;
+            boolean lastBatch = queue.isEmpty();
+            // import the first project "cnf" on its own, with extra instructions
+            // otherwise import in batches, allowing for an under-sized final batch
+            if (!(firstProject || batchComplete || lastBatch)) continue;
+            if (firstProject) displayFirstDialogInstructions();
+            if (stack.size() == 1) io.reportf("Importing project %d of %d", total - queue.size(), total);
+            else io.reportf("Importing projects %d..%d of %d", 1 + total - queue.size() - stack.size(), total - queue.size(), total);
+            importProjects(stack);
+            if (stack.isEmpty()) continue;
+            // to ensure unimported projects still get imported, put them back at the head of the queue
+            io.infof("Re-inserting %d project(s) at the head of the current import queue.", stack.size());
+            while (null != (p = stack.poll())) queue.addFirst(p);
+        }
+    }
 
-        // clear up any remainder
-        if (stack.size() != maxBatchSize) elph.getBunchedEclipseCmds(stack).forEach(elph::runExternal);
+    private void displayGeneralInstructions() {
+        io.banner(
+                "*******************************************************************************",
+                "This command opens import dialogs in Eclipse.                                  ",
+                "Deal with these in Eclipse as follows:                                         ",
+                bold.on() + " \u2022 either hold down ENTER (\u23CE) to import all the projects,                      ",
+                bold.on() + " \u2022 or hold down ESCAPE (\u241B) to cancel all the imports.                          ",
+                "Wait for Eclipse to finish building.                                           ",
+                "Ensure there are no errors in Eclipse's Markers view pane.                     ",
+                "Finally, return to the " + TOOL_NAME + " window to continue.                                ",
+                "*******************************************************************************");
+    }
+
+    private void displayFirstDialogInstructions() {
+        io.banner(
+                "*******************************************************************************",
+                "If this is the first import into an Eclipse workspace:                         ",
+                bold.on() + " \u2022 \uD83D\uDD32 Uncheck \"Search for nested projects\"                                     ",
+                bold.on() + " \u2022 \uD83D\uDD32 Uncheck \"Detect and configure project natures\"                           ",
+                "Then click \"Finish\" before returning to " + TOOL_NAME + ".                                  ",
+                "*******************************************************************************");
+    }
+
+    private void importProjects(LinkedList<Path> stack) {
+        elph.importProjects(stack);
+        io.pause();
+        int count = stack.size();
+        boolean anyImportingHappened = stack.removeAll(elph.getEclipseProjects());
+        if (stack.isEmpty()) {
+            io.infof("Successfully imported %d project(s).", count);
+        } else {
+            // some or all of the projects were not imported
+            // give the user a nudge to figure out what is going wrong
+            if (anyImportingHappened) {
+                boolean info = io.isEnabled(INFO);
+                io.warn("Failed to import " + stack.size() + " project(s)" + (info ? ":" : "."));
+                if (info) stack.stream().map(Objects::toString).map("\t"::concat).forEach(io::reportf);
+            } else {
+                io.warn("No projects were imported.");
+            }
+            io.banner("Please finish or cancel all the import dialogs before continuing.");
+            io.pause();
+            stack.removeAll(elph.getEclipseProjects()); // rule out any additional imports that have been processed
+        }
     }
 
      void eclipseImportCheckboxCheck() {
