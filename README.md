@@ -62,6 +62,6 @@ Below are some useful pointers for importing projects with ELPH. As an example, 
 - Run `elph import cnf` to import the project. This should open a window in eclipse.
     - Uncheck all checkboxes in the Import dialog
     - Check the "Hide already open projects" checkbox
-- **TIP**: For fast importing, hold down the return button instead of clicking finish each time in Eclipse for each project.
+- **TIP**: For fast importing, hold down the return button instead of clicking finish for each project import in Eclipse.
 - Go back to your terminal and press return to continue.
 - If for some reason you exit the terminal process before importing all the dependent projects (e.g. using CTRL+C), run `elph reimport` to resume importing.
