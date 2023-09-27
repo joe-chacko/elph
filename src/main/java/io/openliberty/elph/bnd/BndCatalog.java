@@ -45,6 +45,7 @@ import java.util.stream.StreamSupport;
 import static io.openliberty.elph.bnd.ProjectPaths.asNames;
 import static java.util.Comparator.comparing;
 import static java.util.Spliterator.ORDERED;
+import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toSet;
@@ -168,15 +169,6 @@ public class BndCatalog {
         digraph.addEdge(source, target);
     }
 
-    Path getProject(String name) { return find(name).root; }
-
-    Stream<Path> allProjects() {
-        return pathIndex.values().stream()
-                .map(p -> p.root)
-                .sorted()
-                .distinct();
-    }
-
     public Stream<Path> findProjects(String pattern) {
         var set = pathIndex.keySet().stream()
                 // Use Java's globbing support to match paths
@@ -269,8 +261,6 @@ public class BndCatalog {
         var spl = Spliterators.spliteratorUnknownSize(iterator, ORDERED);
         return StreamSupport.stream(spl, false);
     }
-
-    private static <T> Predicate<T> not(Predicate<T> predicate) { return t -> !predicate.test(t); }
 
     public String getProjectDetails(Path path) {
         String name = path.getFileName().toString();
