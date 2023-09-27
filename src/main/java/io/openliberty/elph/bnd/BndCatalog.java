@@ -131,6 +131,7 @@ public class BndCatalog {
                     .map(this::formatEdge)
                     .collect(joining("\n", "", "\n"));
             io.writeFile(SAVE_FILE_DESC, saveFile, text);
+            bndQueried = true;
         }
     }
 
