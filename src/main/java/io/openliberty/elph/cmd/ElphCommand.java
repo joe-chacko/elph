@@ -85,7 +85,7 @@ public class ElphCommand {
     @Option(names = {"-e", "--eclipse"}, paramLabel = "PATH", hidden = true)
     void setEclipseHome(Path path) {
         this.eclipseHome = path;
-        if (!Files.isDirectory(eclipseHome)) io.warn("Eclipse Home is not a valid " + (OS.is(MAC) ? "app" : "directory") + ": " + olRepo);
+        if (!Files.isDirectory(eclipseHome)) io.warn("Eclipse Home is not a valid " + (OS.is(MAC) ? "app" : "directory") + ": " + eclipseHome);
         else if (OS.is(MAC) && !eclipseHome.toString().endsWith(".app")) io.warn("Eclipse Home is a directory but not a .app directory");
         else if (!Files.isExecutable(eclipseHome.resolve(OS.current().pathToExecutable))) io.warn("Eclipse Home does not contain an executable in the expected place: " + eclipseHome.resolve(OS.current().pathToExecutable));
     }
