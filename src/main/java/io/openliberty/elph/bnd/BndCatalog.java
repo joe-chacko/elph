@@ -45,6 +45,7 @@ import java.util.stream.StreamSupport;
 import static io.openliberty.elph.bnd.ProjectPaths.asNames;
 import static java.util.Comparator.comparing;
 import static java.util.Spliterator.ORDERED;
+import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toSet;
@@ -130,6 +131,7 @@ public class BndCatalog {
                     .map(this::formatEdge)
                     .collect(joining("\n", "", "\n"));
             io.writeFile(SAVE_FILE_DESC, saveFile, text);
+            bndQueried = true;
         }
     }
 
@@ -165,16 +167,11 @@ public class BndCatalog {
         }
         BndProject source = nameIndex.get(parts[0]);
         BndProject target = nameIndex.get(parts[1]);
-        digraph.addEdge(source, target);
-    }
-
-    Path getProject(String name) { return find(name).root; }
-
-    Stream<Path> allProjects() {
-        return pathIndex.values().stream()
-                .map(p -> p.root)
-                .sorted()
-                .distinct();
+        if (null == source || null == target) {
+            io.logf("Could not add saved dependency: %s -> %s\tsource project=%s\ttarget project=%s", parts[0], parts[1], source, target);
+        } else {
+            digraph.addEdge(source, target);
+        }
     }
 
     public Stream<Path> findProjects(String pattern) {
@@ -269,8 +266,6 @@ public class BndCatalog {
         var spl = Spliterators.spliteratorUnknownSize(iterator, ORDERED);
         return StreamSupport.stream(spl, false);
     }
-
-    private static <T> Predicate<T> not(Predicate<T> predicate) { return t -> !predicate.test(t); }
 
     public String getProjectDetails(Path path) {
         String name = path.getFileName().toString();
