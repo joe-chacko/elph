@@ -167,7 +167,11 @@ public class BndCatalog {
         }
         BndProject source = nameIndex.get(parts[0]);
         BndProject target = nameIndex.get(parts[1]);
-        digraph.addEdge(source, target);
+        if (null == source || null == target) {
+            io.logf("Could not add saved dependency: %s -> %s\tsource project=%s\ttarget project=%s", parts[0], parts[1], source, target);
+        } else {
+            digraph.addEdge(source, target);
+        }
     }
 
     public Stream<Path> findProjects(String pattern) {
