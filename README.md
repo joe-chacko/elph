@@ -1,4 +1,7 @@
+
 ## Eclipse Liberty Project Helper &mdash; `elph`
+[![License](https://img.shields.io/badge/License-EPL%202.0-green.svg)](https://opensource.org/licenses/EPL-2.0)
+
 #### A tool to help set up an eclipse workspace for working on Open-Liberty.
 
 #### Post any questions to `#was-elph` on slack
