@@ -31,6 +31,7 @@ import static io.openliberty.elph.util.IO.Verbosity.DEBUG;
 import static io.openliberty.elph.util.IO.Verbosity.INFO;
 import static io.openliberty.elph.util.IO.Verbosity.LOG;
 import static io.openliberty.elph.util.IO.Verbosity.OFF;
+import static io.openliberty.elph.util.Objects.stringEquals;
 import static java.util.function.Predicate.not;
 import static picocli.CommandLine.Help.Ansi.Style.bg_blue;
 import static picocli.CommandLine.Help.Ansi.Style.bg_red;
@@ -76,7 +77,7 @@ public class IO {
 
     public boolean isEnabled(Verbosity v) { return !quiet && v.compareTo(verbosity) <= 0; }
 
-    public Path chooseDirectory(String title, Path oldPath) {
+    public Path chooseDirectory(String title, Object oldPath) {
         String oldVal = stringify(oldPath);
         return inputf(Paths::get,
                 "%s%40s%s %s(%s)%s: ",
@@ -93,13 +94,13 @@ public class IO {
     }
     public <T> T inputf(Function<String, T> converter, String prompt, Object... inserts) { return input(converter, prompt.formatted(inserts)); }
 
-    public void reportDirectory(String title, Path oldPath, Path newPath) {
-        if (null != newPath) {
+    public void reportDirectory(String title, Object oldPath, Object newPath) {
+        if (null == newPath || stringEquals(oldPath, newPath)) {
+            reportf("%s%40s:%s %s", bold.on(), title, reset.on(), stringify(oldPath));
+        } else {
             reportf("%s%40s:%s %s %s(was: %s)%s", bold.on(), title, reset.on(),
                     stringify(newPath),
                     faint.on(), stringify(oldPath), faint.off());
-        } else {
-            reportf("%s%40s:%s %s", bold.on(), title, reset.on(), stringify(oldPath));
         }
     }
 
@@ -198,7 +199,7 @@ public class IO {
         new Scanner(System.in).nextLine();
     }
 
-    private static String stringify(Path setting) {
+    private static String stringify(Object setting) {
         return setting == null ? "<not specified>" : setting.toString();
     }
 }

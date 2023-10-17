@@ -23,11 +23,13 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.function.Consumer;
 
 import static io.openliberty.elph.cmd.ElphCommand.TOOL_NAME;
 import static io.openliberty.elph.util.OS.MAC;
+import static io.openliberty.elph.util.Objects.stringEquals;
 
 @Command(name = "setup", description = "Review/configure the directories used by " + TOOL_NAME + ".")
 class SetupCommand extends AbstractCommand implements Runnable {
@@ -45,49 +47,56 @@ class SetupCommand extends AbstractCommand implements Runnable {
 
     static class InteractiveOptions {
         @Option(names = {"-i", "--interactive"}, description = "interactively configure all the settings")
-        boolean interactive;
+        boolean enabled;
     }
 
     static class Args {
         @ArgGroup
-        NonInteractiveOptions nonInteractiveOptions;
+        NonInteractiveOptions params = new NonInteractiveOptions();
         @ArgGroup
-        InteractiveOptions interactiveOptions;
+        InteractiveOptions interactive = new InteractiveOptions();
     }
 
     @ArgGroup
-    Args args;
+    Args args = new Args();
 
-    Path newRepo;
-    Path newEclipseHome;
-    Path newEclipseWorkspace;
-    boolean interactive;
+    private final Properties prefs;
+    private boolean updated;
+
+    SetupCommand() {
+        prefs = new Properties();
+        try {
+            if (PROPS_FILE.exists()) prefs.load(new FileReader(PROPS_FILE));
+        } catch (Throwable ignored) {}
+    }
+
 
     @Override
     public void run() {
-        if (null != args) {
-            if (null != args.interactiveOptions) {
-                this.interactive = args.interactiveOptions.interactive;
-            }
-            if (null != args.nonInteractiveOptions) {
-                this.newRepo = args.nonInteractiveOptions.newRepo;
-                this.newEclipseHome = args.nonInteractiveOptions.newEclipseHome;
-                this.newEclipseWorkspace = args.nonInteractiveOptions.newEclipseWorkspace;
-            }
-        }
         elph.allowNullPaths();
         io.reportf("%n");
-        updatePath(elph.getOpenLibertyRepo(), newRepo, "elph.ol-repo", "Open Liberty git repository", elph::setOpenLibertyRepo);
+        updatePath(elph.getOpenLibertyRepo(), args.params.newRepo, "elph.ol-repo", "Open Liberty git repository", elph::setOpenLibertyRepo);
         io.reportf("%n");
-        updatePath(elph.getEclipseHome(), newEclipseHome, "elph.eclipse", OS.is(MAC) ? "Eclipse home (Eclipse.app)": "Eclipse home directory", elph::setEclipseHome);
+        updatePath(elph.getEclipseHome(), args.params.newEclipseHome, "elph.eclipse", OS.is(MAC) ? "Eclipse home (Eclipse.app)": "Eclipse home directory", elph::setEclipseHome);
         io.reportf("%n");
-        updatePath(elph.getEclipseWorkspace(), newEclipseWorkspace, "elph.workspace", "Eclipse workspace", elph::setEclipseWorkspace);
+        updatePath(elph.getEclipseWorkspace(), args.params.newEclipseWorkspace, "elph.workspace", "Eclipse workspace", elph::setEclipseWorkspace);
         io.reportf("%n");
+
+        if (updated) {
+            try {
+                prefs.store(new FileWriter(PROPS_FILE), "Written programmatically using: " + spec.root().name() + " " + String.join(" ", spec.commandLine().getParseResult().originalArgs()));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
-    private void updatePath(Path oldPath, Path newPath, String pathTypeName, String uiMsg, Consumer<Path> validator) {
-        io.debugf("updatePath(%s, %s, \"%s\", \"%s\")%n", oldPath, newPath, pathTypeName, uiMsg);
-        if (null == newPath && interactive) newPath = io.chooseDirectory(uiMsg, oldPath);
+    private void updatePath(Path elphPath, Path newPath, String pathTypeName, String uiMsg, Consumer<Path> validator) {
+        Object oldPath = prefs.get(pathTypeName);
+        // if no path was provided directly, use the path from elph if it differs from the entry in prefs
+        if (newPath == null && !stringEquals(oldPath, elphPath)) newPath = elphPath;
+        io.debugf("updatePath(%s, %s, \"%s\", \"%s\")%n", elphPath, newPath, pathTypeName, uiMsg);
+        if (null == newPath && args.interactive.enabled) newPath = io.chooseDirectory(uiMsg, oldPath);
         else io.reportDirectory(uiMsg, oldPath, newPath);
         if (null != newPath) {
             save(pathTypeName, newPath);
@@ -96,19 +105,10 @@ class SetupCommand extends AbstractCommand implements Runnable {
     }
 
     private void save(String name, Path dir) {
-        Properties prefs = new Properties();
-        try {
-            if (PROPS_FILE.exists()) prefs.load(new FileReader(PROPS_FILE));
-            dir = dir.toAbsolutePath();
-            // normalize may simplify the path, but isn't guaranteed to be possible on all systems
-            try {
-                dir = dir.normalize();
-            } catch (Throwable ignored) {}
-            prefs.put(name, dir.toString());
-            prefs.store(new FileWriter(PROPS_FILE), "Written programmatically using: " + spec.name() + " " + String.join(" ", spec.commandLine().getParseResult().originalArgs()));
-        } catch (IOException e) {
-            // TODO report error
-            throw new RuntimeException(e);
-        }
+        dir = dir.toAbsolutePath().normalize();
+        Object oldVal = prefs.put(name, dir.toString());
+        if (stringEquals(dir, oldVal)) return;
+        io.logf("Updating '%s' property%n\told val: '%s'%n\tnew val: '%s'", name, oldVal, dir);
+        updated = true;
     }
 }
