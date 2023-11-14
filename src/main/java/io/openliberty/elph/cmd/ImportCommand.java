@@ -31,6 +31,10 @@ class ImportCommand extends AbstractImportCommand implements Runnable {
     public void run() {
         addToHistory(patterns, includeUsers);
         var projects = findProjects(patterns.stream(), includeUsers);
+        eclipseImportCheckboxCheck();
         importDeps(projects);
     }
+
+
+
 }
