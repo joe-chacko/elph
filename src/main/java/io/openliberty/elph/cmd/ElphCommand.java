@@ -69,7 +69,7 @@ public class ElphCommand {
     @Option(names = {"-n", "--dry-run"}, description = "Do not run commands - just print them.")
     private boolean dryRun;
     @Mixin
-    private IO io;
+    private IO io = new IO();
     private BndCatalog catalog;
     private boolean validationRequired = true;
 
@@ -107,12 +107,19 @@ public class ElphCommand {
         if (!Files.isDirectory(eclipseWorkspace)) io.warn("Eclipse workspace is not a valid directory: " + eclipseWorkspace, "Hint: this directory will be created automatically by Eclipse if started appropriately.");
         else if (!Files.isDirectory(eclipseWorkspace.resolve(DOT_PROJECTS))) io.warn("Eclipse workspace does not contain expected subdirectory: " + eclipseWorkspace.resolve(DOT_PROJECTS));
     }
+    
+    public void setOpenLibertyRepoManually(Path path) {
+        this.olRepo = path;
+        if (!Files.isDirectory(olRepo)) io.warn("Open Liberty repository is not a valid directory: " + olRepo);
+        else if (!Files.isDirectory(olRepo.resolve(".git"))) io.warn("Open Liberty repository does not appear to be a git repository: " + olRepo);
+        else if (!Files.isDirectory(olRepo.resolve("dev"))) io.warn("Open Liberty repository does not contain an expected 'dev' subdirectory: " + olRepo);
+    }
 
     private Path getBndWorkspace() {
         return getOpenLibertyRepo().resolve("dev");
     }
 
-    BndCatalog getCatalog() {
+    public BndCatalog getCatalog() {
         if (this.catalog == null) {
             Path bndWorkspace = getBndWorkspace();
             if (Files.isDirectory(bndWorkspace)) {

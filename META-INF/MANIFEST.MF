@@ -1,0 +1,15 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: elph
+Bundle-SymbolicName: elph
+Bundle-Version: 1.0.0.qualifier
+Bundle-RequiredExecutionEnvironment: JavaSE-17
+Automatic-Module-Name: elph
+Bundle-ClassPath: .,
+ lib/jgrapht-core-1.5.1.jar,
+ lib/picocli-4.7.4.jar
+Export-Package: io.openliberty.elph,
+ io.openliberty.elph.bnd,
+ io.openliberty.elph.cmd,
+ io.openliberty.elph.util
+Require-Bundle: org.apache.commons.collections4;bundle-version="4.4.0"
