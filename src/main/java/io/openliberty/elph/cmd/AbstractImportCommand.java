@@ -25,6 +25,8 @@ import static io.openliberty.elph.cmd.ElphCommand.TOOL_NAME;
 import static io.openliberty.elph.util.IO.Verbosity.INFO;
 import static java.util.stream.Collectors.toCollection;
 import static picocli.CommandLine.Help.Ansi.Style.bold;
+import static picocli.CommandLine.Help.Ansi.Style.italic;
+import static picocli.CommandLine.Help.Ansi.Style.reset;
 
 class AbstractImportCommand extends AbstractHistoryCommand {
 
@@ -125,5 +127,22 @@ class AbstractImportCommand extends AbstractHistoryCommand {
             io.pause();
             stack.removeAll(elph.getEclipseProjects()); // rule out any additional imports that have been processed
         }
+    }
+
+     void eclipseImportCheckboxCheck() {
+        System.out.println( bold.on() +
+                "\nIMPORTANT - Please perform the following instructions within the import window that will appear in " +
+                "Eclipse after you press the 'return' key in this command line shell." +
+                bold.off() + reset.on());
+
+        System.out.println("\nEnsure the following boxes are" + bold.on() + " UNTICKED \u274C" + bold.off() + reset.on());
+        System.out.println(italic.on() + "\t - Close newly imported projects upon deletion");
+        System.out.println("\t - Search for nested projects");
+        System.out.println("\t - Detect and configure project natures" + italic.off());
+
+        System.out.println("\nEnsure the following boxes are" + bold.on() + " TICKED \u2705" + bold.off() + reset.on());
+        System.out.println(italic.on() + "\t - Hide already open projects" + italic.off());
+
+        io.inputf("\nPress return to continue\n");
     }
 }
