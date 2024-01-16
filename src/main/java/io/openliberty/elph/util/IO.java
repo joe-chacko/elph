@@ -196,7 +196,7 @@ public class IO {
     public void pause() {
         if (quiet) return;
         report("Press return to continue, or control-C to quit.");
-        new Scanner(System.in).nextLine();
+        try(Scanner s = new Scanner(System.in)) {s.nextLine();}
     }
 
     private static String stringify(Object setting) {

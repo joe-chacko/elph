@@ -12,9 +12,8 @@
  */
 package io.openliberty.elph.cmd;
 
-import io.openliberty.elph.util.IO;
-import picocli.CommandLine;
-import picocli.CommandLine.Option;
+import static io.openliberty.elph.bnd.ProjectPaths.toNames;
+import static java.util.stream.Collectors.toCollection;
 
 import java.nio.file.Path;
 import java.util.Collection;
@@ -22,8 +21,8 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Stream;
 
-import static io.openliberty.elph.bnd.ProjectPaths.toNames;
-import static java.util.stream.Collectors.toCollection;
+import io.openliberty.elph.util.IO;
+import picocli.CommandLine;
 
 abstract class AbstractCommand {
     @CommandLine.ParentCommand

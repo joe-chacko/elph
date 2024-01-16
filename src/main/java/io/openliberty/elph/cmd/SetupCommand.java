@@ -12,10 +12,9 @@
  */
 package io.openliberty.elph.cmd;
 
-import io.openliberty.elph.util.OS;
-import picocli.CommandLine.ArgGroup;
-import picocli.CommandLine.Command;
-import picocli.CommandLine.Option;
+import static io.openliberty.elph.cmd.ElphCommand.TOOL_NAME;
+import static io.openliberty.elph.util.OS.MAC;
+import static io.openliberty.elph.util.Objects.stringEquals;
 
 import java.io.File;
 import java.io.FileReader;
@@ -23,13 +22,13 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Objects;
 import java.util.Properties;
 import java.util.function.Consumer;
 
-import static io.openliberty.elph.cmd.ElphCommand.TOOL_NAME;
-import static io.openliberty.elph.util.OS.MAC;
-import static io.openliberty.elph.util.Objects.stringEquals;
+import io.openliberty.elph.util.OS;
+import picocli.CommandLine.ArgGroup;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
 
 @Command(name = "setup", description = "Review/configure the directories used by " + TOOL_NAME + ".")
 class SetupCommand extends AbstractCommand implements Runnable {

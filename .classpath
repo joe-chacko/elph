@@ -6,10 +6,15 @@
 			<attribute name="gradle_used_by_scope" value="main,test"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry exported="true" kind="lib" path="lib/picocli-4.7.4.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/biz.aQute.bnd-6.4.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/commons-collections4-4.4.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/commons-lang3-3.8.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/jgrapht-core-1.5.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/jheaps-0.13.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/jline-3.23.0.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/picocli-4.7.4.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/progressbar-0.10.0.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-17/"/>
 	<classpathentry kind="con" path="org.eclipse.buildship.core.gradleclasspathcontainer"/>
-	<classpathentry kind="con" path="org.eclipse.pde.core.requiredPlugins"/>
 	<classpathentry kind="output" path="bin/default"/>
 </classpath>

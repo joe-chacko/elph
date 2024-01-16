@@ -12,7 +12,12 @@
  */
 package io.openliberty.elph.bnd;
 
-import io.openliberty.elph.util.IO;
+import static java.lang.String.join;
+import static java.util.Collections.unmodifiableList;
+import static org.osgi.framework.Constants.BUNDLE_SYMBOLICNAME;
+import static picocli.CommandLine.Help.Ansi.Style.bold;
+import static picocli.CommandLine.Help.Ansi.Style.faint;
+import static picocli.CommandLine.Help.Ansi.Style.reset;
 
 import java.io.IOError;
 import java.io.IOException;
@@ -26,13 +31,7 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.stream.Stream;
 
-import static java.lang.String.join;
-import static java.util.Collections.unmodifiableList;
-import static java.util.stream.Collectors.joining;
-import static org.osgi.framework.Constants.BUNDLE_SYMBOLICNAME;
-import static picocli.CommandLine.Help.Ansi.Style.bold;
-import static picocli.CommandLine.Help.Ansi.Style.faint;
-import static picocli.CommandLine.Help.Ansi.Style.reset;
+import io.openliberty.elph.util.IO;
 
 final class BndProject {
     final Path root;

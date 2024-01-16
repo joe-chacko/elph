@@ -5,11 +5,16 @@ Bundle-SymbolicName: elph
 Bundle-Version: 1.0.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Automatic-Module-Name: elph
-Bundle-ClassPath: .,
+Bundle-ClassPath: bin/main/,
+ lib/biz.aQute.bnd-6.4.1.jar,
+ lib/commons-collections4-4.4.jar,
+ lib/commons-lang3-3.8.jar,
  lib/jgrapht-core-1.5.1.jar,
- lib/picocli-4.7.4.jar
+ lib/jheaps-0.13.jar,
+ lib/jline-3.23.0.jar,
+ lib/picocli-4.7.4.jar,
+ lib/progressbar-0.10.0.jar
 Export-Package: io.openliberty.elph,
  io.openliberty.elph.bnd,
  io.openliberty.elph.cmd,
  io.openliberty.elph.util
-Require-Bundle: org.apache.commons.collections4;bundle-version="4.4.0"

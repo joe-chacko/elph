@@ -175,7 +175,8 @@ public class BndCatalog {
     }
 
     public Stream<Path> findProjects(String pattern) {
-        var set = pathIndex.keySet().stream()
+        @SuppressWarnings("resource")
+		var set = pathIndex.keySet().stream()
                 // Use Java's globbing support to match paths
                 .filter(FileSystems.getDefault().getPathMatcher("glob:" + pattern)::matches)
                 // find all the projects indexed by each matching path

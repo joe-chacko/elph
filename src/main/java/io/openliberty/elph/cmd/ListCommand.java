@@ -12,17 +12,15 @@
  */
 package io.openliberty.elph.cmd;
 
+import static io.openliberty.elph.bnd.ProjectPaths.asNames;
+import static java.util.function.Predicate.not;
+
+import java.util.List;
+
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
-
-import java.nio.file.Path;
-import java.util.List;
-import java.util.Set;
-
-import static io.openliberty.elph.bnd.ProjectPaths.asNames;
-import static java.util.function.Predicate.not;
 
 @Command(name = "list", description = "List projects matching specified patterns.")
 class ListCommand extends AbstractCommand implements Runnable {
