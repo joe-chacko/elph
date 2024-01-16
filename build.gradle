@@ -38,9 +38,20 @@ version '1.0-SNAPSHOT'
 dependencies {
     implementation 'org.jgrapht:jgrapht-core:1.5.1'
     implementation 'info.picocli:picocli:4.7.4'
-    implementation 'org.osgi:osgi.core:8.0.0'
+    compileOnly 'org.osgi:osgi.core:8.0.0'
     implementation 'org.apache.commons:commons-collections4:4.4'
     implementation 'org.apache.commons:commons-lang3:3.8'
     implementation 'biz.aQute.bnd:biz.aQute.bnd:6.4.1'
     implementation 'me.tongfei:progressbar:0.10.0'
 }
+
+// Make the implementation configuration "resolvable" so copyLibs can use it
+configurations.implementation.canBeResolved = true
+
+task copyLibs(type: Copy) {
+    into "lib"
+    from configurations.implementation
+}
+
+build.dependsOn copyLibs
+clean.delete "lib"
